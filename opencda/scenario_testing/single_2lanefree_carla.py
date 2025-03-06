@@ -28,7 +28,9 @@ def run_scenario(opt, scenario_params):
             '../assets/2lane_freeway_simplified/2lane_freeway_simplified.xodr')
 
         # create CAV world
+        print(opt.apply_ml)
         cav_world = CavWorld(opt.apply_ml)
+        
         # create scenario manager
         scenario_manager = sim_api.ScenarioManager(scenario_params,
                                                    opt.apply_ml,

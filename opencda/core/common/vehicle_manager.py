@@ -173,6 +173,7 @@ class VehicleManager(object):
         retrieve surrounding info an ego position.
         """
         # localization
+        # 主要设置了ego_pos和ego_speed
         self.localizer.localize()
 
         ego_pos = self.localizer.get_ego_pos()

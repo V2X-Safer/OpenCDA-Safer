@@ -203,6 +203,7 @@ class LocalizationManager(object):
         Currently implemented in a naive way.
         """
 
+        # acitvate 默认不激活，到时候加噪声还得激活
         if not self.activate:
             self._ego_pos = self.vehicle.get_transform()
             self._speed = get_speed(self.vehicle)

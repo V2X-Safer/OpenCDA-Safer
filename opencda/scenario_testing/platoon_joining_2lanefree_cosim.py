@@ -9,6 +9,7 @@ customized 2-lane freeway simplified map sorely with co-sim
 import os
 
 import carla
+from __future__ import annotations
 
 import opencda.scenario_testing.utils.cosim_api as sim_api
 import opencda.scenario_testing.utils.customized_map_api as map_api
@@ -60,7 +61,7 @@ def run_scenario(opt, scenario_params):
                               current_time=scenario_params['current_time'])
 
         spectator = scenario_manager.world.get_spectator()
-        spectator_vehicle = platoon_list[0].vehicle_manager_list[1].vehicle
+        spectator_vehicle :carla.libcarla.Vehicle = platoon_list[0].vehicle_manager_list[1].vehicle
 
         while True:
             # simulation tick

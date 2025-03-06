@@ -47,7 +47,7 @@ def main():
     default_yaml = config_yaml = os.path.join(
         os.path.dirname(os.path.realpath(__file__)),
         'opencda/scenario_testing/config_yaml/default.yaml')
-    # set the yaml file for the specific testing scenario
+    # set the yaml file for the specific testing sce/home/test/OpenCDA/OpenCDA/opencda/scenario_testing/single_town06_carla.pnario
     config_yaml = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                'opencda/scenario_testing/config_yaml/%s.yaml' % opt.test_scenario)
     # load the default yaml file and the scenario yaml file as dictionaries

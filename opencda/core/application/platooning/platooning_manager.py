@@ -14,7 +14,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import opencda.core.plan.drive_profile_plotting as open_plt
-
+import opencda.core.common.vehicle_manager as open_vm
+import opencda.core.common.cav_world as open_cav_world
 
 class PlatooningManager(object):
     """
@@ -46,11 +47,11 @@ class PlatooningManager(object):
         The counter that record the number of speed recovery attempts.
     """
 
-    def __init__(self, config_yaml, cav_world):
+    def __init__(self, config_yaml, cav_world: open_cav_world.CavWorld):
 
         self.pmid = str(uuid.uuid1())
 
-        self.vehicle_manager_list = []
+        self.vehicle_manager_list: list[open_vm.VehicleManager] = []
         self.maximum_capacity = config_yaml['max_capacity']
 
         self.destination = None

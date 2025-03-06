@@ -88,33 +88,68 @@ ARG PERCEPTION=true
 ARG SUMO=true
 ARG OPENCDA_FULL_INSTALL=true
 
+ENV USER=opencda
+ENV CARLA_VERSION=0.9.12
+ENV ADDITIONAL_MAPS=true
+ENV PERCEPTION=true
+ENV SUMO=true
+ENV OPENCDA_FULL_INSTALL=true
 ENV TZ=America/New_York
 ENV DEBIAN_FRONTEND=noninteractive
 ENV CARLA_VERSION=$CARLA_VERSION
 ENV CARLA_HOME=/home/carla
 ENV SUMO_HOME=/usr/share/sumo
 
+ENV http_proxy=""
+ENV https_proxy=""
+ENV HTTP_PROXY=""
+ENV HTTPS_PROXY=""
+ENV http_proxy="172.17.0.1:7890"
+ENV https_proxy="172.17.0.1:7890"
+ENV HTTP_PROXY="172.17.0.1:7890"
+ENV HTTPS_PROXY="172.17.0.1:7890"
+ENV no_proxy="127.0.0.1"
+RUN sed -i '/proxy/d' /etc/environment
+RUN rm -f /etc/apt/apt.conf.d/01proxy
+
 # Add new user and install prerequisite packages.
 
 WORKDIR /home
+RUN unset http_proxy && unset https_proxy && unset all_proxy && unset HTTP_PROXY && unset HTTPS_PROXY && unset ALL_PROXY
 
-RUN useradd -m ${USER}
-
-RUN set -xue && apt-key del 7fa2af80 \
-&& apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/3bf863cc.pub \
-&& apt-get update \
-&& apt-get install -y build-essential cmake debhelper git wget xdg-user-dirs xserver-xorg libvulkan1 libsdl2-2.0-0 \
-libsm6 libgl1-mesa-glx libomp5 pip unzip libjpeg8 libtiff5 software-properties-common nano fontconfig
-
+RUN useradd -m ${USER} && echo "${USER}:123" | chpasswd
+RUN set -xue && apt-key del 7fa2af80 
+RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/3bf863cc.pub 
+RUN export | grep -i proxy && apt-get update && apt-get install -y \
+    build-essential \
+    cmake \
+    debhelper \
+    git \
+    wget \
+    xdg-user-dirs \
+    xserver-xorg \
+    libvulkan1 \
+    libsdl2-2.0-0 \
+    libsm6 \
+    libgl1-mesa-glx \
+    libomp5 \
+    python3-pip \
+    unzip \
+    libjpeg8 \
+    libtiff5 \
+    software-properties-common \
+    nano \
+    sudo \
+    fontconfig
 # Install CARLA and its additional maps.
 
 RUN mkdir carla
 
-RUN wget https://carla-releases.s3.eu-west-3.amazonaws.com/Linux/CARLA_${CARLA_VERSION}.tar.gz -nv --show-progress \
+RUN wget http://127.0.0.1:8000/CARLA_${CARLA_VERSION}.tar.gz -nv --show-progress \
 --progress=bar:force:noscroll \
 && tar -zxvf CARLA_${CARLA_VERSION}.tar.gz --directory carla && rm CARLA_${CARLA_VERSION}.tar.gz \
 && if [ ${ADDITIONAL_MAPS} = true ] ; then \
-wget https://carla-releases.s3.eu-west-3.amazonaws.com/Linux/AdditionalMaps_${CARLA_VERSION}.tar.gz -nv \
+wget http://127.0.0.1:8000/AdditionalMaps_${CARLA_VERSION}.tar.gz -nv \
 --show-progress --progress=bar:force:noscroll && \
 tar -zxvf AdditionalMaps_${CARLA_VERSION}.tar.gz --directory carla && rm AdditionalMaps_${CARLA_VERSION}.tar.gz ; \
 elif [ ${ADDITIONAL_MAPS} != false ] ; then echo "Invalid ADDITIONAL_MAPS argument." ; \
@@ -122,21 +157,22 @@ else echo "Additional CARLA maps will not be installed." ; fi && chown -R ${USER
 
 # Install the perception components (PyTorch and YOLOv5).
 
-RUN if [ ${PERCEPTION} = true ] ; then \
-pip install torch torchvision torchaudio yolov5 ; \
-elif [ ${PERCEPTION} != false ] ; then echo "Invalid PERCEPTION argument." ; \
-else echo "Perception components (PyTorch and YOLOv5) will not be installed." ; fi
+# RUN if [ ${PERCEPTION} = true ] ; then \
+# pip install torch torchvision torchaudio yolov5 ; \
+# elif [ ${PERCEPTION} != false ] ; then echo "Invalid PERCEPTION argument." ; \
+# else echo "Perception components (PyTorch and YOLOv5) will not be installed." ; fi
 
 # Install SUMO.
 
-RUN if [ ${SUMO} = true ] ; then \
-add-apt-repository ppa:sumo/stable && apt-get update && apt-get install -y sumo sumo-tools sumo-doc \
-&& pip install traci ; \
-elif [ ${SUMO} != false ] ; then echo "Invalid SUMO argument." ; \
-else echo "SUMO will not be installed." ; fi
 
-# Install OpenCDA.
-
+# RUN if [ ${SUMO} = true ] ; then \
+# add-apt-repository ppa:sumo/stable && apt-get update && apt-get install -y sumo sumo-tools sumo-doc \
+# && pip install traci ; \
+# elif [ ${SUMO} != false ] ; then echo "Invalid SUMO argument." ; \
+# else echo "SUMO will not be installed." ; fi
+#
+# # Install OpenCDA.
+#
 RUN if [ ${OPENCDA_FULL_INSTALL} = false ] ; then \
 wget https://raw.githubusercontent.com/ucla-mobility/OpenCDA/main/requirements.txt \
 && pip install -r requirements.txt && rm requirements.txt ; \
@@ -147,4 +183,4 @@ git clone https://github.com/ucla-mobility/OpenCDA.git && pip install -r OpenCDA
 && chown -R ${USER}:${USER} /home/OpenCDA ; \
 else echo "Invalid OPENCDA_FULL_INSTALL argument." ; fi
 
-USER ${USER}
+# USER ${USER}

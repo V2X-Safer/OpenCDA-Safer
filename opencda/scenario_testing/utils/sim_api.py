@@ -175,6 +175,7 @@ class ScenarioManager:
         self.scenario_params = scenario_params
         self.carla_version = carla_version
 
+        # 天气在 scenario_params['world'] 中设置
         simulation_config = scenario_params['world']
 
         # set random seed if stated
@@ -267,7 +268,7 @@ class ScenarioManager:
 
     def create_vehicle_manager(self, application,
                                map_helper=None,
-                               data_dump=False):
+                               data_dump=False) :
         """
         Create a list of single CAVs.
 
@@ -348,7 +349,7 @@ class ScenarioManager:
 
         return single_cav_list
 
-    def create_platoon_manager(self, map_helper=None, data_dump=False):
+    def create_platoon_manager(self, map_helper=None, data_dump=False) :
         """
         Create a list of platoons.
 

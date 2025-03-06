@@ -582,6 +582,7 @@ class PerceptionManager:
 
         vehicle_list = world.get_actors().filter("*vehicle*")
         # todo: hard coded
+        # 检测距离<50m的车辆
         thresh = 50 if not self.data_dump else 120
 
         vehicle_list = [v for v in vehicle_list if self.dist(v) < thresh and
