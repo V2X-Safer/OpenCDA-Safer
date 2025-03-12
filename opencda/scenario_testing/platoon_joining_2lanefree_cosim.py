@@ -9,7 +9,6 @@ customized 2-lane freeway simplified map sorely with co-sim
 import os
 
 import carla
-from __future__ import annotations
 
 import opencda.scenario_testing.utils.cosim_api as sim_api
 import opencda.scenario_testing.utils.customized_map_api as map_api
