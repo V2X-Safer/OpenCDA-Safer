@@ -60,7 +60,7 @@ def run_scenario(opt, scenario_params):
                               current_time=scenario_params['current_time'])
 
         spectator = scenario_manager.world.get_spectator()
-        spectator_vehicle :carla.libcarla.Vehicle = platoon_list[0].vehicle_manager_list[1].vehicle
+        spectator_vehicle = platoon_list[0].vehicle_manager_list[1].vehicle
 
         while True:
             # simulation tick
