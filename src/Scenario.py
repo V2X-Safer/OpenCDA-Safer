@@ -2,7 +2,7 @@ import carla
 from opencda.core.application.platooning import platooning_manager
 from opencda.core.common.vehicle_manager import VehicleManager
 from opencda.scenario_testing.evaluations.evaluate_manager import EvaluationManager
-from opencda.scenario_testing.utils import cosim_api, sim_api
+from opencda.scenario_testing.utils import cosim_api, customized_map_api, sim_api
 from typing import Union
 
 
@@ -51,12 +51,10 @@ class scenario:
 
         if opt.v2x:
             self.platoon_list = self.scenario_manager.create_platoon_manager(
-                # TODO: add opt
                 map_helper=opt.map_helper,
                 data_dump=opt.data_dump)
 
         self.single_cav_list: list[VehicleManager] =  self.scenario_manager.create_vehicle_manager(
-            # TODO: add opt
             application=opt.application,
             map_helper=opt.map_helper,
             data_dump=opt.data_dump
@@ -65,7 +63,6 @@ class scenario:
         if opt.record:
             self.scenario_manager.client.start_recorder(
                 opt.record_file,
-                # TODO: add opt
                 opt.addtional_recorder)
 
         if opt.carla:
@@ -136,10 +133,16 @@ class scenario:
             for v in self.bg_veh_list:
                 v.destroy()
 
+
     def init_opt(self, scenario_params):
         ''' 初始化 opt 参数 '''
+        opt.v2x = None
         if scenario_params.get('scenario') \
             and scenario_params['scenario'].get('platoon_list'):
             opt.v2x = True
         else: 
             opt.v2x = False
+
+        opt.map_helper = customized_map_api.spawn_helper_2lanefree_complete
+        opt.application = ['platooning'] if opt.v2x else ['single']
+        opt.addtional_recorder = False

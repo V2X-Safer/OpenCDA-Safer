@@ -8,6 +8,7 @@ seed_dir = join(os.getcwd(), 'opencda', 'scenario_testing', 'config_yaml')
 # TODO
 sumo_cfg = ''
 data_dump = False
+additional_recorder = False
 
 dcount = 15
 bcount = 15
@@ -18,6 +19,7 @@ record = True
 town = 'Town06'
 record_file = f"{town}_{'sumo' if sumo else 'carla'}.log"
 version = '0.9.12'
+
 
 
 
