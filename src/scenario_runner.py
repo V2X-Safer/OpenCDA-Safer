@@ -2,7 +2,7 @@ import opt
 import state.platoon_state
 import state.scenario_state
 import state.vehicle_state
-import utils
+import src.utils_ as utils_
 import state
 import carla
 
@@ -33,7 +33,7 @@ def run_scenario(opt, scenario_params):
 				data_dump=False)
 
 		# create single cavs
-		single_cav_list =  scenario_manager.create_vehicle_manager(['platooning'])
+		single_cav_list = scenario_manager.create_vehicle_manager(['platooning'])
 
 		# create background traffic in carla
 		traffic_manager, bg_veh_list = \
@@ -53,10 +53,6 @@ def run_scenario(opt, scenario_params):
 
 
 
-
-
-
-
 		# run steps
 		while True:
 			scenario_manager.tick()
@@ -64,11 +60,8 @@ def run_scenario(opt, scenario_params):
 			spectator.set_transform(
 				carla.Transform(
 					transform.location +
-					carla.Location(
-						z=80),
-					carla.Rotation(
-						pitch=-
-						90)))
+					carla.Location(z=80),
+					carla.Rotation(pitch=-90)))
 			for platoon in platoon_list:
 				platoon.update_information()
 				platoon.run_step()
