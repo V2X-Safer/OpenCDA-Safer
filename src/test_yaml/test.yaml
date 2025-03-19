@@ -3,7 +3,10 @@ description: |-
   Author: Runsheng Xu <rxx3386@ucla.edu>
   Content: This is the scenario testing configuration file for platooning joining and cooperative merge
            at the Town06 using  CARLA only.
-
+map: |-
+  Town06 is a small town with a lot of intersections and roundabouts. It is a good place to test the platooning
+  and cooperative merging algorithms.
+  
 
 # world:
 #   sync_mode: true

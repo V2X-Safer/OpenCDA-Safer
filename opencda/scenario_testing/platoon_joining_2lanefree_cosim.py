@@ -20,6 +20,7 @@ from opencda.scenario_testing.utils.yaml_utils import add_current_time
 
 def run_scenario(opt, scenario_params):
     try:
+        opt.debug = True
         scenario_params = add_current_time(scenario_params)
 
         # create CAV world
@@ -61,9 +62,16 @@ def run_scenario(opt, scenario_params):
 
         spectator = scenario_manager.world.get_spectator()
         spectator_vehicle = platoon_list[0].vehicle_manager_list[1].vehicle
+        if opt.debug:
+            settings = scenario_manager.world.get_settings()
+            settings.no_rendering_mode = True
+            scenario_manager.world.apply_settings(settings)
+
+
 
         while True:
             # simulation tick
+            scenario_manager.cav_world.global_clock+=1
             scenario_manager.tick()
 
             transform = spectator_vehicle.get_transform()

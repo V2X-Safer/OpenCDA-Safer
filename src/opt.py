@@ -1,11 +1,12 @@
 import os
 from os.path import dirname, realpath, join
+import sys
 
 from numpy import record
 
 
 # INFO: map setting
-map = '2lane_freeway_simplified'
+map = 'Town06'
 town = map
 map_helper = None
 
@@ -22,6 +23,7 @@ test_dir = join(os.getcwd(), 'src', 'test_yaml')
 seed_dir = join(os.getcwd(), 'opencda', 'scenario_testing', 'config_yaml')
 sumo_dir = join(os.getcwd(), 'opencda', 'assets', map)
 xodr_dir = join(os.getcwd(), 'opencda', 'assets', map)
+picture_dir = join(os.getcwd(), 'src', 'log', 'view')
 
 
 # INFO: traffic flow setting
@@ -33,18 +35,26 @@ sumo_cfg = None
 record = True
 data_dump = False
 additional_recorder = False
-record_file = f"{town}_{'sumo' if sumo else 'carla'}.log"
+record_file = f"{map}_{'cosim' if sumo else 'carla'}.log"
+picture_save_file = 'location.jpg'
 
 
 # INFO: fuzz setting
 dcount = 15
 bcount = 15
-min_distance = 200
-max_distance = 500
+spawn_min_distance = 200
+spawn_max_distance = 500
+vehicle_min_distance = 10
+vehicle_max_distance = 50
+acc_threshold = 5
+brake_threshold = 5
+angular_threshold = 5
+mutate_strategy = 'weather'
 
 
 # INFO: misc
 carla_version = '0.9.12'
+maxsize = sys.maxsize
 log_level = {
 	'info': True,
 	'warning': True,

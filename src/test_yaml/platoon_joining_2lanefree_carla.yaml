@@ -1,15 +1,13 @@
 description: |-
   Copyright 2021 <UCLA Mobility Lab>
   Author: Runsheng Xu <rxx3386@ucla.edu>
-  Content: This is the co-simulation scenario testing configuration file for platooning joining and cooperative merge
+  Content: This is the scenario testing configuration file for platooning joining and cooperative merge
            at the customized 2lanefree simple version.
-
 
 # First define the basic parameters of the vehicles
 vehicle_base:
   sensing:
     perception:
-      activate: false # when not activated, objects positions will be retrieved from server directly
       camera:
         visualize: 0 # how many camera images need to be visualized. 0 means no visualization for camera
         num: 0 # how many cameras are mounted on the vehicle. Maximum 3(frontal, left and right cameras)
@@ -26,16 +24,8 @@ vehicle_base:
     overtake_allowed: false # whether overtake allowed, typically false for platoon leader
     collision_time_ahead: 1.3 # used for collision checking
     overtake_counter_recover: 35 # the vehicle can not do another overtake during next certain steps
-    local_planner: &base_local_planner # trajectory planning related
+    local_planner:
       trajectory_dt: 0.25 # for every dt seconds, we sample a trajectory point from the trajectory path as next goal state
-
-# define sumo simulation setting for traffic generation
-sumo:
-  port: ~
-  host: ~
-  gui: true
-  client_order: 1
-  step_length: ${world.fixed_delta_seconds}
 
 # define the platoon basic characteristics
 platoon_base:
@@ -44,7 +34,25 @@ platoon_base:
   open_gap: 1.5 # open gap
   warm_up_speed: 55 # required speed before cooperative merging
 
+# define the background traffic control by carla
+carla_traffic_manager:
+  global_distance: 4.0 # the minimum distance in meters that vehicles have to keep with the rest
+  # Sets the difference the vehicle's intended speed and its current speed limit.
+  #  Carla default speed is 30 km/h, so -100 represents 60 km/h,
+  # and 20 represents 24 km/h
+  global_speed_perc: -300
+  vehicle_list:
+    - spawn_position: [-285, 8.3, 0.3, 0, 0, 0]
+    - spawn_position: [-310, 8.3, 0.3, 0, 0, 0]
+    - spawn_position: [-390, 8.3, 0.3, 0, 0, 0]
+    - spawn_position: [-320, 4.8, 0.3, 0, 0, 0]
+      vehicle_speed_perc: -200
+    - spawn_position: [-335, 4.8, 0.3, 0, 0, 0]
+    - spawn_position: [-360, 4.8, 0.3, 0, 0, 0]
+    - spawn_position: [-400, 4.8, 0.3, 0, 0, 0]
+    - spawn_position: [-410, 4.8, 0.3, 0, 0, 0]
 
+# define scenario. In this scenario, a 4-vehicle platoon already exists.
 scenario:
   platoon_list:
     - name: platoon1
@@ -76,7 +84,7 @@ scenario:
       spawn_position: [-380, 4.8, 0.3, 0, 0, 0]
       # when this is defined, the above parameter will be ignored, and a special map function will
       # be used to define the spawn position based on the argument
-      spawn_special: [0.655]
+      spawn_special: [0.625]
       destination: [300, 12.0, 0]
       sensing:
         perception:

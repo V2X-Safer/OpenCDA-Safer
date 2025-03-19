@@ -27,10 +27,12 @@ def run_scenario(opt, scenario_params):
             '../assets/2lane_freeway_simplified/2lane_freeway_simplified.xodr')
 
         # create scenario manager
+        print(xodr_path)
         scenario_manager = sim_api.ScenarioManager(scenario_params,
                                                    opt.apply_ml,
                                                    opt.version,
                                                    xodr_path=xodr_path)
+
         if opt.record:
             scenario_manager.client. \
                 start_recorder("platoon_joining_2lanefree_carla.log", True)
