@@ -5,6 +5,38 @@ import sys
 from numpy import record
 
 
+
+# INFO: fuzz setting
+dcount = 15
+bcount = 15
+spawn_min_distance = 200
+spawn_max_distance = 500
+vehicle_min_distance = 10
+vehicle_max_distance = 50
+acc_threshold = 5
+brake_threshold = 3
+angular_threshold = 0.5
+mutate_strategy = 'weather'
+
+
+# INFO: misc
+carla_version = '0.9.12'
+carla_path = '/home/test/V2X/OpenCDA/carla_0_9_12/CarlaUE4/Binaries/Linux/CarlaUE4-Linux-Shipping'
+maxsize = sys.maxsize
+log_level = {
+	'info': True,
+	'warning': True,
+	'error': True
+}
+debug = True
+debug_indent = 4
+debug_width = 100
+debug_depth = 2
+debug_line = '-' * 100
+carla_port = 2000
+
+
+
 # INFO: map setting
 map = 'Town06'
 town = map
@@ -16,6 +48,7 @@ apply_ml = True
 xodr_file = None
 v2x = False
 application = ['single']
+rsu = False
 
 
 # INFO: file directory
@@ -37,31 +70,3 @@ data_dump = False
 additional_recorder = False
 record_file = f"{map}_{'cosim' if sumo else 'carla'}.log"
 picture_save_file = 'location.jpg'
-
-
-# INFO: fuzz setting
-dcount = 15
-bcount = 15
-spawn_min_distance = 200
-spawn_max_distance = 500
-vehicle_min_distance = 10
-vehicle_max_distance = 50
-acc_threshold = 5
-brake_threshold = 5
-angular_threshold = 5
-mutate_strategy = 'weather'
-
-
-# INFO: misc
-carla_version = '0.9.12'
-maxsize = sys.maxsize
-log_level = {
-	'info': True,
-	'warning': True,
-	'error': True
-}
-debug = True
-debug_indent = 4
-debug_width = 100
-debug_depth = 2
-debug_line = '-' * 100

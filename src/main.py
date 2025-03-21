@@ -1,6 +1,4 @@
-from ctypes import util
 
-from torch import seed
 from src.Scenario_ import Scenario
 import src.utils_ as utils_
 import opt
@@ -14,37 +12,34 @@ def main():
         map_name = utils_.get_map_name(file)
         seed_param['map'] = map_name
         success_param = None
+        test_param = seed_param
 
         print('select seed file: ', file)
-        test_scenario: Scenario = Scenario(seed_param)
+        # utils_.check_carla()
         dcycle_cnt = 0
-
         # INFO: dcount mean deep search, bcount mean broad search 
         while dcycle_cnt < opt.dcount:
-            if success_param: test_scenario: Scenario = Scenario(success_param)
-            bscenario_list = []
+            test_scenario = Scenario(success_param if success_param else test_param)
+            bscenario_param_list = []
             bcycle_cnt = 0
             while bcycle_cnt < opt.bcount:
-                # TODO
                 test_scenario.mutate()
 
-                # TODO 
                 score, is_success = test_scenario.run()
 
-                bscenario_param_list.append((test_scenario.__dict__(), score))
-
-                # INFO: if crack car is success, set test_scenario to mutate
-                # INFO: else set the lowest score scenario to test_scenario
-                if is_success: success_param = test_scenario.__dict__()
-                else:
-                    test_param = min(bscenario_list, key=lambda x: x[1])[0]
-                    test_scenario
-                
-                if opt.debug:
-                    for ind, val in enumerate(bscenario_list):
-                        print(f'index: {ind}, score: {val[1]}')
-                
                 bcycle_cnt += 1
+
+            bscenario_param_list.append((test_scenario.__dict__(), score))
+
+            # INFO: if crack car is success, set test_scenario to mutate
+            # INFO: else set the lowest score scenario to test_scenario
+            if is_success: success_param = test_scenario.__dict__()
+            else:
+                test_param = max(bscenario_param_list, key=lambda x: x[1])[0]
+            
+            if opt.debug:
+                for ind, val in enumerate(bscenario_param_list):
+                    print(f'index: {ind}, score: {val[1]}')
 
             dcycle_cnt += 1
 

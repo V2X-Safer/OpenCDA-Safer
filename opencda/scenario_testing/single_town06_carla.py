@@ -9,7 +9,6 @@ from opencda.core.common.cav_world import CavWorld
 from opencda.scenario_testing.evaluations.evaluate_manager import \
     EvaluationManager
 from opencda.scenario_testing.utils.yaml_utils import add_current_time
-from src import utils_
 
 
 def run_scenario(opt, scenario_params):

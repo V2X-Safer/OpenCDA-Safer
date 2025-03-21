@@ -80,7 +80,7 @@ class OracleManager(EvaluationManager):
 
         # super().evaluate()
         # 归一化 oracle
-        oracle = sum(sum(len(i) for i in status_oracle.values()),sum(len(i) for i in hard_turn_oracle.values()))
+        oracle = sum(len(i) for i in status_oracle.values()) + sum(len(i) for i in hard_turn_oracle.values())
         return oracle, is_success
     
     
@@ -121,13 +121,13 @@ class OracleManager(EvaluationManager):
         }
         self.status_dict: dict = self.cav_world.get_ego_vehicle_manager().safety_manager.status_queue
         for clock, status in self.status_dict:
-            if status[1]['collision']:
+            if status['collision']:
                 score['collision'].append(status[0])
-            if status[1]['stuck']:
+            if status['stuck']:
                 score['stuck'].append(status[0])
-            if status[1]['offroad']:
+            if status['offroad']:
                 score['stuck'].append(status[0])
-            if status[1]['ran_light']:
+            if status['ran_light']:
                 score['ran_light'].append(status[0])
         
         is_success = False
@@ -149,11 +149,11 @@ class OracleManager(EvaluationManager):
         }
         imu_data: list[tuple[int]] = self.cav_world.get_ego_vehicle_manager().safety_manager.imu_sensor.imu_data
         for linear_acc, angular_acc, signed_forward_acc in imu_data:
-            if abs(signed_forward_acc) > opt.acc_threshold:
+            if signed_forward_acc > opt.acc_threshold:
                 score['hard_acc'].append(signed_forward_acc)
-            if abs(linear_acc) > opt.brake_threshold:
+            if -signed_forward_acc > opt.brake_threshold:
                 score['hard_brake'].append(linear_acc)
-            if abs(angular_acc) > opt.angular_threshold:
+            if abs(angular_acc.z) > opt.angular_threshold:
                 score['hard_turn'].append(angular_acc)
         return score
 

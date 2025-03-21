@@ -54,6 +54,8 @@ class Scenario:
     def __init__(self, scenario_params):
         self.init_opt(scenario_params)
         utils_.debug_dict(opt.__dict__, opt.debug)
+        if opt.debug:
+            scenario_params['world']['client_port'] = opt.carla_port
         
         self.raw_param = scenario_params
         scenario_params = add_current_time(scenario_params)
@@ -63,7 +65,7 @@ class Scenario:
             self.scenario_manager.client.start_recorder(
                 opt.record_file,
                 opt.additional_recorder)
-
+        self.platoon_list = []
         if opt.v2x:
             self.platoon_list = self.scenario_manager.create_platoon_manager(
                 map_helper=opt.map_helper,
@@ -73,7 +75,8 @@ class Scenario:
                 application=opt.application,
                 map_helper=opt.map_helper,
                 data_dump=opt.data_dump)
-        
+        if opt.rsu:
+            self.rsu_list = self.scenario_manager.create_rsu_manager(opt.data_dump)
 
         # create carla traffic flow
         if not opt.sumo:
@@ -150,21 +153,32 @@ class Scenario:
                         single_cav.update_info()
                         control = single_cav.run_step()
                         single_cav.vehicle.apply_control(control)
+                for rsu in self.rsu_list:
+                    rsu.update_info()
+                    rsu.run_step()
 
         finally:
             score, is_success = self.oracle_manager.evaluate()
 
-            if opt.record:
-                self.scenario_manager.client.stop_recorder()
+            try:
+                if opt.record:
+                    self.scenario_manager.client.stop_recorder()
 
-            self.scenario_manager.close()
+                self.scenario_manager.close()
 
-            for platoon in self.platoon_list:
-                platoon.destroy()
-            for cav in self.single_cav_list:
-                cav.destroy()
-            for v in self.bg_veh_list:
-                v.destroy()
+                # utils_.check_carla()
+                for platoon in self.platoon_list:
+                    platoon.destroy()
+                for cav in self.single_cav_list:
+                    # cav.perception_manager.rgb_camera[0].sensor: carla.Sensor
+                    cav.destroy()
+                for r in self.rsu_list:
+                    r.destroy()
+                for v in self.bg_veh_list:
+                    v.destroy()
+            finally:
+                # utils_.check_carla()
+                return score, is_success
 
 
     def init_opt(self, scenario_params):
@@ -176,6 +190,11 @@ class Scenario:
             opt.v2x = True
             opt.application = ['platooning']
         
+        # rsu
+        if scenario_params.get('scenario') \
+            and scenario_params['scenario'].get('rsu_list'):
+            opt.rsu = True
+        
         # traffic flow
         if scenario_params.get('sumo'):
             opt.sumo = True
@@ -186,6 +205,8 @@ class Scenario:
             opt.xodr_file = os.path.join(opt.xodr_dir, opt.map + '.xodr')
             opt.map_helper = customized_map_api.spawn_helper_2lanefree
             opt.town = None
+            
+        
 
     
     def set_traffic(self):
