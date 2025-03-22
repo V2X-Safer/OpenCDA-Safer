@@ -229,5 +229,6 @@ class VehicleManager(object):
         """
         self.perception_manager.destroy()
         self.localizer.destroy()
+        self.safety_manager.destroy()
         self.vehicle.destroy()
         self.map_manager.destroy()

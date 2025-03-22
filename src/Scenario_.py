@@ -66,6 +66,7 @@ class Scenario:
                 opt.record_file,
                 opt.additional_recorder)
         self.platoon_list = []
+        self.rsu_list = []
         if opt.v2x:
             self.platoon_list = self.scenario_manager.create_platoon_manager(
                 map_helper=opt.map_helper,
@@ -177,7 +178,6 @@ class Scenario:
                 for v in self.bg_veh_list:
                     v.destroy()
             finally:
-                # utils_.check_carla()
                 return score, is_success
 
 

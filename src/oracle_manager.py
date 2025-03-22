@@ -99,8 +99,9 @@ class OracleManager(EvaluationManager):
             for vehicle_manager in platoon.vehicle_manager_list[1:]:
                 dis = utils_.get_vehicle_distance(head_manager, vehicle_manager)
                 # HACK: max_distance maybe too strict
-                if  dis > opt.vehicle_max_distance \
-                    or dis < opt.vehicle_min_distance:
+                if dis > opt.vehicle_max_distance:
+                    score[index].append(abs(dis - opt.vehicle_max_distance))
+                elif dis < opt.vehicle_min_distance:
                     score[index].append(abs(dis - opt.vehicle_min_distance))
         return score
 

@@ -15,21 +15,20 @@ def main():
         test_param = seed_param
 
         print('select seed file: ', file)
-        # utils_.check_carla()
         dcycle_cnt = 0
         # INFO: dcount mean deep search, bcount mean broad search 
         while dcycle_cnt < opt.dcount:
-            test_scenario = Scenario(success_param if success_param else test_param)
             bscenario_param_list = []
             bcycle_cnt = 0
             while bcycle_cnt < opt.bcount:
+                test_scenario = Scenario(success_param if success_param else test_param)
                 test_scenario.mutate()
 
                 score, is_success = test_scenario.run()
 
                 bcycle_cnt += 1
 
-            bscenario_param_list.append((test_scenario.__dict__(), score))
+                bscenario_param_list.append((test_scenario.__dict__(), score))
 
             # INFO: if crack car is success, set test_scenario to mutate
             # INFO: else set the lowest score scenario to test_scenario

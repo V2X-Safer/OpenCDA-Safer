@@ -61,7 +61,7 @@ def check_carla():
                 subprocess.run(["pkill", "-9", "-f", "CarlaUE4"])
                 
             # Wait for processes to terminate and port to be released
-            time.sleep(3)
+            time.sleep(1)
             print("Carla processes have been terminated")
             
             # Double-check if port is now free
@@ -80,7 +80,7 @@ def check_carla():
         
         print(f"Carla started with PID {carla_process.pid}")
         # Wait for Carla to initialize
-        time.sleep(10)
+        time.sleep(3)
         
         # Verify Carla is running and port is open
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

@@ -252,7 +252,7 @@ carla_traffic_manager:
 scenario:
   platoon_list:
     - name: platoon1
-      destination: [1000.372955, 8.3, 0.3]
+      destination: [450, 8.3, 0.3]
       members: # the first one is regarded as leader by default
         - name: cav1
           spawn_position: [-350, 8.3, 0.3, 0, 0, 0] # x, y, z, roll, yaw, pitch
@@ -429,7 +429,7 @@ all vehicles will be in lincoln mkz model and green color.
 scenario:
   platoon_list:
     - <<: *platoon_base
-      destination: [1000.372955, 8.3, 0.3]
+      destination: [450, 8.3, 0.3]
       members: # the first one is regarded as leader by default
         - <<: *vehicle_base
           spawn_position: [-350, 8.3, 0.3, 0, 0, 0] # x, y, z, roll, yaw, pitch
