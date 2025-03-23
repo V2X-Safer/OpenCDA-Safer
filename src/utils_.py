@@ -1,6 +1,7 @@
-from doctest import debug
+import datetime
 import os
 import glob
+import uuid
 from omegaconf import OmegaConf
 import opt
 from pprint import PrettyPrinter
@@ -95,6 +96,45 @@ def check_carla():
     except Exception as e:
         print(f"Error while managing Carla: {e}")
 
+def save_param(param: dict, file_name: str, timestamp: str):
+    """
+    将参数字典保存为YAML文件。
+    
+    Parameters
+    ----------
+    param : dict
+        要保存的参数字典
+    save_path : str
+        保存的文件路径，应以.yaml结尾
+    """
+    try:
+        dir_path = os.path.join(opt.param_dir, timestamp)
+        if (dir_path and not os.path.exists(dir_path)):
+            os.makedirs(dir_path)
+        
+        # 处理文件扩展名
+        if not file_name.endswith('.yaml'):
+            file_name = f"{file_name}.yaml"
+        
+        # 将字典转换为OmegaConf并保存
+        conf = OmegaConf.create(param)
+        save_path = os.path.join(dir_path, file_name)
+        OmegaConf.save(conf, save_path)
+        
+        print(f"Parameters successfully saved to {file_name}")
+        
+    except Exception as e:
+        print(f"Error saving parameters to {file_name}: {e}")
+        
+        # 尝试备用方法保存
+        try:
+            import yaml
+            with open(file_name, 'w') as file:
+                yaml.dump(param, file, default_flow_style=False)
+                print(f"Parameters saved using PyYAML to {file_name}")
+        except Exception as backup_e:
+            print(f"Backup save method also failed: {backup_e}")
+
 def get_param(target_file: str, debug=False):
     # set default dir to test_yaml
     default_yaml = config_yaml = os.path.join(opt.test_dir, 'default.yaml')
@@ -114,24 +154,24 @@ def get_map_name(target_file: str):
     elif 'town06' in target_file:
         return 'Town06'
     elif '2lanefree' in target_file:
-        return '2lane_free_simplied'
+        return '2lane_freeway_simplified'
     else:
         return 'Town06'
 
 def get_vehicle_distance(vehicle1, vehicle2):
-    return vehicle1.get_location().distance(vehicle2.get_location())
+    return get_distance(vehicle1.get_transform(), vehicle2.get_transform())
+
+def get_distance(transform1, transform2):
+    return transform1.location.distance(transform2.location)
+
 
 def merge_dict(dict1: dict, dict2: dict):
    return OmegaConf.merge(dict1, dict2) 
 
 
-def get_seed_dir():
-    return os.path.join(os.getcwd(), 'opencda', 'scenario_testing', 'config_yaml')
-
-def get_seed():
-    opt.seed_dir = get_seed_dir()
-    file_glob = glob.glob(opt.seed_dir + os.sep + '*.yaml')
-    return [file for file in file_glob if not any(black_file in file for black_file in ['v2xp', 'default.yaml', 'openscenario_carla.yaml'])]
+def get_seed(target_file_dir: str = opt.seed_dir):
+    file_glob = glob.glob(target_file_dir + os.sep + '*.yaml')
+    return [file for file in file_glob if not any(black_file in file for black_file in ['test.yaml', 'v2xp', 'default.yaml', 'openscenario_carla.yaml'])]
 
 def get_xodr_path(xodr_file: str = '2lane_freeway_simplified.xodr'):
     return os.path.join(os.getcwd(),
@@ -146,7 +186,7 @@ def debug_hint(func):
             pprint(opt.debug_line)
             res = func(*args, **kwargs)
             pprint(opt.debug_line)
-        return res
+            return res
     return inner 
 
 

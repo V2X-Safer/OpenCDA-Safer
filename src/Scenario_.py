@@ -114,20 +114,22 @@ class Scenario:
             "xodr_path": opt.xodr_file
         }
 
-        if opt.v2x:
+        if opt.sumo:
             self.scenario_manager_cls = cosim_api.CoScenarioManager
         else: 
-            # ScenarioManager will not create a CavWorld
-            manager_args['cav_world'] = CavWorld(opt.apply_ml)
             self.scenario_manager_cls = sim_api.ScenarioManager
         
         if opt.sumo_cfg:
             manager_args["sumo_file_parent_path"] = opt.sumo_cfg
+        if not opt.v2x:
+            # platooning_manager won't create cav_world
+            manager_args['cav_world'] = CavWorld(opt.apply_ml)
+
         utils_.debug_dict(manager_args, opt.debug, ['scenario_params'])
         return self.scenario_manager_cls(**manager_args)
 
 
-        
+
     def run(self):
         ''' 运行场景 '''
         try: 
@@ -178,34 +180,57 @@ class Scenario:
                 for v in self.bg_veh_list:
                     v.destroy()
             finally:
+                # set carla synchronous mode to False
+                # if self.traffic_manager:
+                #     self.traffic_manager.shut_down()
+                # settings = self.scenario_manager.world.get_settings()
+                # settings.synchronous_mode = False
+                # self.scenario_manager.world.apply_settings(settings)
+                # self.raw_param['sync_mode'] = False
                 return score, is_success
 
 
     def init_opt(self, scenario_params):
         ''' 初始化 opt 参数 '''
         opt.map = scenario_params.get('map')
-        # platoon 
+        opt.sumo_dir = os.path.join(os.getcwd(), 'opencda', 'assets', opt.map)
+        opt.xodr_dir = os.path.join(os.getcwd(), 'opencda', 'assets', opt.map)
+        # platoon
         if scenario_params.get('scenario') \
-            and scenario_params['scenario'].get('platoon_list'):
+            and scenario_params['scenario'].get('platoon_list') != []:
             opt.v2x = True
             opt.application = ['platooning']
+        else:
+            opt.v2x = False
+            opt.application = ['single']
         
         # rsu
         if scenario_params.get('scenario') \
             and scenario_params['scenario'].get('rsu_list'):
             opt.rsu = True
+        else:
+            opt.rsu = False
         
         # traffic flow
         if scenario_params.get('sumo'):
             opt.sumo = True
-            opt.sumo_cfg = os.path.join(opt.sumo_dir, opt.map)
+            opt.sumo_cfg = opt.sumo_dir
+            scenario_params['sumo']['gui'] = False
+        else:
+            opt.sumo = False
+            opt.sumo_cfg = None
         
         # map
         if 'Town' not in opt.map:
             opt.xodr_file = os.path.join(opt.xodr_dir, opt.map + '.xodr')
             opt.map_helper = customized_map_api.spawn_helper_2lanefree
             opt.town = None
+        else:
+            opt.xodr_file = None
+            opt.map_helper = None
+            opt.town = opt.map
             
+        opt.record_file = f"{map}_{'cosim' if opt.sumo else 'carla'}.log"
         
 
     
@@ -220,6 +245,7 @@ class Scenario:
 
     def mutate(self):
         ''' 变异场景 '''
+        random.seed(os.urandom(4))
         # TODO: 改变场景参数
         if opt.mutate_strategy == 'weather':
             self.operation.set_weather()
@@ -230,14 +256,15 @@ class Scenario:
         else:
             random.choice([self.operation.set_weather, self.operation.set_traffic, self.operation.set_task])()
 
-    def __dict__(self):
+    def get_raw_param(self):
         """Override __dict__ to return the raw parameters."""
+        # self.raw_param['sync_mode'] = True
         return self.raw_param
         
 
 
 if __name__ == '__main__':
     # for test
-    seed_param = utils_.get_param('test.yaml')
+    seed_param = utils_.get_param('cnm.yaml')
     Scenario = Scenario(seed_param)
     Scenario.run()

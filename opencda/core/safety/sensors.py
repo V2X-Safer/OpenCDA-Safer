@@ -10,6 +10,133 @@ from collections import deque
 from typing import List
 
 
+class GNSSSensor(object):
+    """
+    GNSS sensor for tracking vehicle position.
+    
+    Parameters
+    ----------
+    vehicle : carla.Vehicle
+        The carla.Vehicle to attach the sensor to.
+    params : dict
+        The dictionary containing sensor configurations.
+        
+    Attributes
+    ----------
+    sensor : carla.Sensor
+        The carla GNSS sensor that mounts at the vehicle.
+    data : deque
+        Queue storing the position data history.
+    """
+    
+    def __init__(self, vehicle, params):
+        world = vehicle.get_world()
+        
+        blueprint = world.get_blueprint_library().find('sensor.other.gnss')
+        # Set optional configuration parameters
+        if 'noise_alt_stddev' in params:
+            blueprint.set_attribute('noise_alt_stddev', str(params.get('noise_alt_stddev', 0.0)))
+        if 'noise_lat_stddev' in params:
+            blueprint.set_attribute('noise_lat_stddev', str(params.get('noise_lat_stddev', 0.0)))
+        if 'noise_lon_stddev' in params:
+            blueprint.set_attribute('noise_lon_stddev', str(params.get('noise_lon_stddev', 0.0)))
+        
+        # Default sensor location on top of the vehicle
+        self.sensor = world.spawn_actor(
+            blueprint,
+            carla.Transform(carla.Location(x=0.0, y=0.0, z=2.0)),
+            attach_to=vehicle)
+            
+        # We need a weak reference to avoid circular reference
+        weak_self = weakref.ref(self)
+        self.sensor.listen(lambda event: GNSSSensor._on_gnss_event(weak_self, event))
+        
+        # Store history of position data
+        self.data = []
+        self.current_location = None
+        
+    @staticmethod
+    def _on_gnss_event(weak_self, event):
+        """
+        Callback function for GNSS sensor data.
+        
+        Parameters
+        ----------
+        weak_self : weakref
+            Weak reference to the GNSSSensor object.
+        event : carla.GNSSMeasurement
+            The GNSS measurement data from the sensor.
+        """
+        self = weak_self()
+        if not self:
+            return
+            
+        # Store the GNSS data (latitude, longitude, altitude) and timestamp
+        self.data.append({
+            'timestamp': event.timestamp,
+            'transformation': event.transform
+        })
+        
+        self.current_location = carla.Location(
+            x=event.transform.location.x,
+            y=event.transform.location.y,
+            z=event.transform.location.z
+        )
+        
+    def get_location(self):
+        """
+        Get the current location data.
+        
+        Returns
+        -------
+        location : carla.Location or None
+            The current location of the vehicle.
+        """
+        return self.current_location
+        
+    def get_data_history(self):
+        """
+        Get the history of GNSS data.
+        
+        Returns
+        -------
+        list
+            List of GNSS data points.
+        """
+        return list(self.data)
+        
+    def return_status(self):
+        """
+        Return current GNSS status information.
+        
+        Returns
+        -------
+        dict
+            Dictionary containing status information.
+        """
+        return {'gnss': False}
+        
+    def tick(self, data_dict):
+        """
+        Update method called on every simulation tick.
+        
+        Parameters
+        ----------
+        data_dict : dict
+            Dictionary of data from other modules.
+        """
+        pass
+        
+    def destroy(self):
+        """
+        Clean up the GNSS sensor.
+        """
+        self.data.clear()
+        if self.sensor.is_alive:
+            self.sensor.stop()
+            self.sensor.destroy()
+    
+
 class CollisionSensor(object):
     """
     Collision detection sensor.

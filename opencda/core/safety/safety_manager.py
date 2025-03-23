@@ -6,7 +6,7 @@ import weakref
 from collections import deque
 
 from opencda.core.safety.sensors import CollisionSensor, \
-    TrafficLightDector, StuckDetector, OffRoadDetector, IMUSensor
+    TrafficLightDector, StuckDetector, OffRoadDetector, GNSSSensor, IMUSensor
 
 
 class SafetyManager:
@@ -31,6 +31,7 @@ class SafetyManager:
                         StuckDetector(params['stuck_dector']),
                         OffRoadDetector(params['offroad_dector']),
                         TrafficLightDector(params['traffic_light_detector'], vehicle),
+                        GNSSSensor(vehicle, params.get('gnss_sensor',{})),
                         self.imu_sensor]
 
     def update_info(self, data_dict) -> dict:
