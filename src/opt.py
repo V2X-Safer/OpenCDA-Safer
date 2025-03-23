@@ -7,11 +7,11 @@ from numpy import record
 
 
 # INFO: fuzz setting
-dcount = 15
-bcount = 15
+dcount = 5
+bcount = 5
 spawn_min_distance = 200
 spawn_max_distance = 500
-vehicle_min_distance = 10
+vehicle_min_distance = 3
 vehicle_max_distance = 50
 acc_threshold = 5
 brake_threshold = 3
@@ -28,7 +28,7 @@ log_level = {
 	'warning': True,
 	'error': True
 }
-debug = True
+debug = False
 debug_indent = 4
 debug_width = 100
 debug_depth = 2
@@ -57,6 +57,7 @@ seed_dir = join(os.getcwd(), 'opencda', 'scenario_testing', 'config_yaml')
 sumo_dir = join(os.getcwd(), 'opencda', 'assets', map)
 xodr_dir = join(os.getcwd(), 'opencda', 'assets', map)
 picture_dir = join(os.getcwd(), 'src', 'log', 'view')
+param_dir = join(os.getcwd(), 'src', 'log', 'param')
 
 
 # INFO: traffic flow setting

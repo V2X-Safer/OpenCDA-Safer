@@ -850,6 +850,7 @@ class PerceptionManager:
 
         if self.lidar_visualize:
             self.o3d_vis.destroy_window()
+            del self.o3d_vis
 
         if self.data_dump:
             self.semantic_lidar.sensor.destroy()

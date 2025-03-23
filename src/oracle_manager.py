@@ -1,6 +1,5 @@
 from opencda.scenario_testing.evaluations.evaluate_manager import EvaluationManager
 from opencda.core.application.platooning.platooning_manager import PlatooningManager
-import numpy as np
 from typing import Dict, List, Any, Optional, Tuple
 from opencda.scenario_testing.utils.sim_api import CavWorld
 import matplotlib.pyplot as plt
@@ -64,6 +63,7 @@ class OracleManager(EvaluationManager):
         Returns:
             Tuple[int, bool]: 得分 和 是否碰撞
         """
+
         # fix bug in opencda
         vm = self.cav_world.get_ego_vehicle_manager()
         imu_data = vm.safety_manager.imu_sensor.imu_data
@@ -80,7 +80,9 @@ class OracleManager(EvaluationManager):
 
         # super().evaluate()
         # 归一化 oracle
-        oracle = sum(len(i) for i in status_oracle.values()) + sum(len(i) for i in hard_turn_oracle.values())
+        oracle = sum(len(i) for i in distance_oracle.values()) + \
+                sum(len(i) for i in status_oracle.values()) + \
+                sum(len(i) for i in hard_turn_oracle.values())
         return oracle, is_success
     
     
@@ -88,21 +90,32 @@ class OracleManager(EvaluationManager):
         pass
         
 
-    def evaluate_distance(self):
-        ''' 获取车队之间的距离 '''
+    def evaluate_distance(self) -> Dict[int, List[float]]:
+        """
+        get distance oracle
+
+        Returns:
+            Dict[int, List[float]]: 距离oracle
+        """
         platoon_dict = self.cav_world.get_platoon_dict()
-        score = []
-        for index, platoon in platoon_dict.items():
+        score = {}
+        for platoon_index, platoon in platoon_dict.items():
             platoon: PlatooningManager  # Type annotation after variable assignment
             head_manager = platoon.vehicle_manager_list[0]
-            score[index] = []
-            for vehicle_manager in platoon.vehicle_manager_list[1:]:
-                dis = utils_.get_vehicle_distance(head_manager, vehicle_manager)
-                # HACK: max_distance maybe too strict
-                if dis > opt.vehicle_max_distance:
-                    score[index].append(abs(dis - opt.vehicle_max_distance))
-                elif dis < opt.vehicle_min_distance:
-                    score[index].append(abs(dis - opt.vehicle_min_distance))
+            score[platoon_index] = []
+            for gnss_index, gnss_dict in enumerate(head_manager.safety_manager.sensors[4].data): 
+                head_transform = gnss_dict['transformation']
+
+                for vehicle_manager in platoon.vehicle_manager_list:
+                    # skip head_manager
+                    if vehicle_manager == head_manager \
+                        or gnss_index >= len(vehicle_manager.safety_manager.sensors[4].data): continue 
+
+                    vehicle_transform = vehicle_manager.safety_manager.sensors[4].data[gnss_index]['transformation']
+
+                    dis = utils_.get_distance(head_transform, vehicle_transform)
+                    if dis < opt.vehicle_min_distance:
+                        score[platoon_index].append(abs(dis - opt.vehicle_min_distance))
         return score
 
     

@@ -114,15 +114,17 @@ class Scenario:
             "xodr_path": opt.xodr_file
         }
 
-        if opt.v2x:
+        if opt.sumo:
             self.scenario_manager_cls = cosim_api.CoScenarioManager
         else: 
-            # ScenarioManager will not create a CavWorld
-            manager_args['cav_world'] = CavWorld(opt.apply_ml)
             self.scenario_manager_cls = sim_api.ScenarioManager
         
         if opt.sumo_cfg:
             manager_args["sumo_file_parent_path"] = opt.sumo_cfg
+        if not opt.v2x:
+            # platooning_manager won't create cav_world
+            manager_args['cav_world'] = CavWorld(opt.apply_ml)
+
         utils_.debug_dict(manager_args, opt.debug, ['scenario_params'])
         return self.scenario_manager_cls(**manager_args)
 
@@ -184,28 +186,44 @@ class Scenario:
     def init_opt(self, scenario_params):
         ''' 初始化 opt 参数 '''
         opt.map = scenario_params.get('map')
-        # platoon 
+        opt.sumo_dir = os.path.join(os.getcwd(), 'opencda', 'assets', opt.map)
+        opt.xodr_dir = os.path.join(os.getcwd(), 'opencda', 'assets', opt.map)
+        # platoon
         if scenario_params.get('scenario') \
-            and scenario_params['scenario'].get('platoon_list'):
+            and scenario_params['scenario'].get('platoon_list') != []:
             opt.v2x = True
             opt.application = ['platooning']
+        else:
+            opt.v2x = False
+            opt.application = ['single']
         
         # rsu
         if scenario_params.get('scenario') \
             and scenario_params['scenario'].get('rsu_list'):
             opt.rsu = True
+        else:
+            opt.rsu = False
         
         # traffic flow
         if scenario_params.get('sumo'):
             opt.sumo = True
-            opt.sumo_cfg = os.path.join(opt.sumo_dir, opt.map)
+            opt.sumo_cfg = opt.sumo_dir
+            scenario_params['sumo']['gui'] = False
+        else:
+            opt.sumo = False
+            opt.sumo_cfg = None
         
         # map
         if 'Town' not in opt.map:
             opt.xodr_file = os.path.join(opt.xodr_dir, opt.map + '.xodr')
             opt.map_helper = customized_map_api.spawn_helper_2lanefree
             opt.town = None
+        else:
+            opt.xodr_file = None
+            opt.map_helper = None
+            opt.town = opt.map
             
+        opt.record_file = f"{map}_{'cosim' if opt.sumo else 'carla'}.log"
         
 
     
@@ -220,6 +238,7 @@ class Scenario:
 
     def mutate(self):
         ''' 变异场景 '''
+        random.seed(os.urandom(4))
         # TODO: 改变场景参数
         if opt.mutate_strategy == 'weather':
             self.operation.set_weather()
@@ -230,7 +249,7 @@ class Scenario:
         else:
             random.choice([self.operation.set_weather, self.operation.set_traffic, self.operation.set_task])()
 
-    def __dict__(self):
+    def get_raw_param(self):
         """Override __dict__ to return the raw parameters."""
         return self.raw_param
         
