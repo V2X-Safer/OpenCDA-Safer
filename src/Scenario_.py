@@ -1,5 +1,8 @@
+import copy
+import torch.multiprocessing as mp
 import os
 import random
+import time
 import carla
 from opencda.core.application.platooning import platooning_manager
 from opencda.core.common.cav_world import CavWorld
@@ -260,11 +263,44 @@ class Scenario:
         """Override __dict__ to return the raw parameters."""
         # self.raw_param['sync_mode'] = True
         return self.raw_param
-        
 
+def make_and_run(scenario_params):
+    scenario = Scenario(scenario_params)
+    scenario.mutate()
+    score, is_success = scenario.run()
+    return score, is_success, copy.deepcopy(scenario.get_raw_param())
+
+def process_run(scenario_params):
+    # 使用torch.multiprocessing并设置启动方法
+    result_queue = mp.Queue()
+    def wrapped_func(scenario_params, queue):
+        try:
+            result = make_and_run(scenario_params)
+            queue.put(result)
+        except Exception as e:
+            queue.put(f"Error occurred: {str(e)}")
+    
+    p = mp.Process(target=wrapped_func, args=(scenario_params, result_queue))
+    p.start()
+    p.join(10 * 60)
+    
+    if p.is_alive():
+        print('time out, kill the process')
+        p.kill()
+        return None
+    else:
+        if not result_queue.empty():
+            return result_queue.get()
+        else:
+            raise Exception("exec failed")
 
 if __name__ == '__main__':
-    # for test
-    seed_param = utils_.get_param('cnm.yaml')
-    Scenario = Scenario(seed_param)
-    Scenario.run()
+    param = utils_.get_param('cnm.yaml')
+
+    utils_.restart_carla()
+    time.sleep(5)
+    print(process_run(param))
+    # make_and_run(param)
+    utils_.restart_carla()
+    print(process_run(param))
+    utils_.check_carla()

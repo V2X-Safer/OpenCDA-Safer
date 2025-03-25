@@ -11,8 +11,7 @@ import socket
 
 pprint = PrettyPrinter(indent=opt.debug_indent, width=opt.debug_width, depth=opt.debug_depth).pprint
 
-
-def check_carla():
+def restart_carla():
     """
     Check if Carla is running. If it is running, kill it; otherwise, start it.
     Handles defunct/zombie processes and ensures proper port availability.
@@ -39,13 +38,13 @@ def check_carla():
                     pass
         
         # Check if the port is in use
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(1)
-        port_in_use = sock.connect_ex(('localhost', carla_port)) == 0
-        sock.close()
+        # sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # sock.settimeout(1)
+        # port_in_use = sock.connect_ex(('localhost', carla_port)) == 0
+        # sock.close()
         
         # Kill any existing Carla processes (including parent processes of zombies)
-        if carla_pids or port_in_use or has_defunct:
+        if carla_pids  or has_defunct:
             print(f"Found existing Carla processes or port {carla_port} in use")
             
             # Kill Carla processes
@@ -66,13 +65,13 @@ def check_carla():
             print("Carla processes have been terminated")
             
             # Double-check if port is now free
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(1)
-            port_still_in_use = sock.connect_ex(('localhost', carla_port)) == 0
-            sock.close()
+            # sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            # sock.settimeout(1)
+            # port_still_in_use = sock.connect_ex(('localhost', carla_port)) == 0
+            # sock.close()
             
-            if port_still_in_use:
-                print(f"Warning: Port {carla_port} is still in use after killing processes")
+            # if port_still_in_use:
+                # print(f"Warning: Port {carla_port} is still in use after killing processes")
         
         # Start Carla using subprocess instead of fork
         print("Starting Carla...")
@@ -84,14 +83,14 @@ def check_carla():
         time.sleep(3)
         
         # Verify Carla is running and port is open
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(1)
-        if sock.connect_ex(('localhost', carla_port)) == 0:
-            print(f"Carla is running on port {carla_port}")
-            sock.close()
-        else:
-            print(f"Warning: Carla may not have started correctly. Port {carla_port} is not open.")
-            sock.close()
+        # sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # sock.settimeout(1)
+        # if sock.connect_ex(('localhost', carla_port)) == 0:
+            # print(f"Carla is running on port {carla_port}")
+            # sock.close()
+        # else:
+            # print(f"Warning: Carla may not have started correctly. Port {carla_port} is not open.")
+            # sock.close()
             
     except Exception as e:
         print(f"Error while managing Carla: {e}")
