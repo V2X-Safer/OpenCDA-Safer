@@ -295,12 +295,9 @@ def process_run(scenario_params):
             raise Exception("exec failed")
 
 if __name__ == '__main__':
-    param = utils_.get_param('cnm.yaml')
+    param = utils_.get_param('../log/param/2025_03_25-18_30/Town06_0_2_3.yaml')
 
     utils_.restart_carla()
-    time.sleep(5)
-    print(process_run(param))
-    # make_and_run(param)
-    utils_.restart_carla()
-    print(process_run(param))
-    utils_.check_carla()
+    
+    score, is_success, params = process_run(param)
+    print(score, is_success, params)

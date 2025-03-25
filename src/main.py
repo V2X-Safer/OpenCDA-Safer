@@ -38,11 +38,13 @@ def main():
                 except Exception as e:
                     if e.args[0] == 'exec failed':
                         print("HANG")
-                        bcycle_cnt -= 1
                     else:
                         traceback.print_exc()
+                    continue
                 utils_.restart_carla()
-
+                
+                if params.get('score'): del params['score']
+                if params.get('is_success'): del params['is_success']
                 params = {'score': score, 'is_success': is_success, **params}
                 bscenario_param_list.append((params, score))
                 utils_.save_param(params, f'{map_name}_{index}_{dcycle_cnt}_{bcycle_cnt}.yaml', timestamp)
