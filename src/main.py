@@ -1,20 +1,19 @@
 import copy
 import datetime
 import traceback
+
 import Scenario_
 import src.utils_ as utils_
 import opt
 
-def handler(signum, frame):
-    raise Exception("HANG")
 
 def main():
     score = 0
-    # signal.signal(signal.SIGALRM, handler)
+    # signal.signal(signal.SIGALRM, handler)s
     current_datetime = datetime.datetime.now()
     timestamp = current_datetime.strftime("%Y_%m_%d-%H_%M")
-    for index, file in enumerate(utils_.get_seed(opt.seed_dir)):
-        if index < 0: continue
+    for index, file in enumerate(utils_.get_seed(opt.test_dir)):
+        if index < 4: continue
         seed_param = utils_.get_param(file)
         map_name = utils_.get_map_name(file)
         seed_param['map'] = map_name
@@ -28,12 +27,14 @@ def main():
         while dcycle_cnt < opt.dcount:
             bscenario_param_list = []
             bcycle_cnt = 0
-            is_success = False
             if success_param: test_param = success_param
             while bcycle_cnt < opt.bcount:
                 # signal.alarm(10*60)
                 try:
-                    score, is_success, params = Scenario_.process_run(test_param)
+                    if opt.debug:
+                        score, is_success, params = Scenario_.make_and_run(test_param)
+                    else:
+                        score, is_success, params = Scenario_.process_run(test_param)
                     
                 except Exception as e:
                     if e.args[0] == 'exec failed':
@@ -41,14 +42,15 @@ def main():
                     else:
                         traceback.print_exc()
                     continue
-                utils_.restart_carla()
+                if not opt.debug: utils_.restart_carla()
                 
                 if params.get('score'): del params['score']
                 if params.get('is_success'): del params['is_success']
                 params = {'score': score, 'is_success': is_success, **params}
                 bscenario_param_list.append((params, score))
                 utils_.save_param(params, f'{map_name}_{index}_{dcycle_cnt}_{bcycle_cnt}.yaml', timestamp)
-
+                
+                if is_success: break
                 bcycle_cnt += 1
 
             # INFO: if crack car is success, set test_scenario to mutate

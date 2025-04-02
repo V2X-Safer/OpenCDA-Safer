@@ -145,7 +145,9 @@ def get_param(target_file: str, debug=False):
 
     default_dict = OmegaConf.load(default_yaml)
     scene_dict = OmegaConf.load(config_yaml)
-    return merge_dict(default_dict, scene_dict)
+    merged_dict = merge_dict(default_dict, scene_dict)
+    merged_dict['map'] = get_map_name(target_file)
+    return merged_dict
 
 def get_map_name(target_file: str):
     if 'town05' in target_file:

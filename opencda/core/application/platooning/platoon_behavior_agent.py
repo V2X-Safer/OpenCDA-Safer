@@ -775,6 +775,7 @@ class PlatooningBehaviorAgent(BehaviorAgent):
                 and not vehicle_blocking_status \
                 and distance < 1.0 * self._ego_speed / 3.6:
             print('joining finished !')
+            self.joined = True
             return (*self.run_step_maintaining(), FSM.JOINING_FINISHED)
 
         # 4. If vehicle is not blocked, make ego back to the frontal vehicle's
@@ -899,6 +900,7 @@ class PlatooningBehaviorAgent(BehaviorAgent):
                     rear_destination)
             if distance < self._ego_speed / 3.6 * self.inter_gap * 1.5:
                 print('joining finished')
+                self.joined = True
                 return (
                     *
                     super().run_step(

@@ -184,3 +184,13 @@ platoon_base:
 scenario:
   single_cav_list: []
   platoon_list: []
+
+mutator:
+  actor:
+    vehicle_list: []
+    walker_list: []
+    rsu_list: []
+
+  noise: 'pass'
+  
+  

@@ -72,9 +72,8 @@ class OracleManager(EvaluationManager):
         while len(timestamps) < len(imu_data):
             imu_data.popleft()
 
-        # TODO: distance oracle maybe error
-        distance_oracle = self.evaluate_distance()
-        status_oracle, is_success = self.evaluate_status()
+        distance_oracle, joined_platoon = self.evaluate_platoon()
+        status_oracle, is_collision = self.evaluate_status()
         hard_turn_oracle = self.evaluate_acc()
         # merge_time_oracle = self.evaluate_merge_time()
 
@@ -82,15 +81,20 @@ class OracleManager(EvaluationManager):
         # 归一化 oracle
         oracle = sum(len(i) for i in distance_oracle.values()) + \
                 sum(len(i) for i in status_oracle.values()) + \
-                sum(len(i) for i in hard_turn_oracle.values())
-        return oracle, is_success
+                sum(len(i) for i in hard_turn_oracle.values()) - \
+                len(joined_platoon) * opt.platoon_joined_penalty
+        if self.cav_world.get_platoon_dict():
+            platoon_dict = self.cav_world.get_platoon_dict()
+            for platoon_index, platoon in platoon_dict.items():
+                platoon: PlatooningManager
+        return oracle, is_collision
     
     
     def merge_oracle(self):
         pass
         
 
-    def evaluate_distance(self) -> Dict[int, List[float]]:
+    def evaluate_platoon(self) -> Tuple[Dict[int, List[float]], List[PlatooningManager]]:
         """
         get distance oracle
 
@@ -99,15 +103,24 @@ class OracleManager(EvaluationManager):
         """
         platoon_dict = self.cav_world.get_platoon_dict()
         score = {}
+        joined_platoon_list = []
         for platoon_index, platoon in platoon_dict.items():
             platoon: PlatooningManager  # Type annotation after variable assignment
             head_manager = platoon.vehicle_manager_list[0]
             score[platoon_index] = []
+            joined_vehicle = 0
             for gnss_index, gnss_dict in enumerate(head_manager.safety_manager.sensors[4].data): 
                 head_transform = gnss_dict['transformation']
 
                 for vehicle_manager in platoon.vehicle_manager_list:
-                    # skip head_manager
+                    # 对每辆车只计入一次是否在车队内
+                    if not hasattr(vehicle_manager.agent, 'added'): 
+                        vehicle_manager.agent.added = False
+                    if vehicle_manager.agent.joined and \
+                        not vehicle_manager.agent.added:
+                        joined_vehicle += 1
+                        vehicle_manager.agent.added = True
+                    # 跳过头车
                     if vehicle_manager == head_manager \
                         or gnss_index >= len(vehicle_manager.safety_manager.sensors[4].data): continue 
 
@@ -116,7 +129,10 @@ class OracleManager(EvaluationManager):
                     dis = utils_.get_distance(head_transform, vehicle_transform)
                     if dis < opt.vehicle_min_distance:
                         score[platoon_index].append(abs(dis - opt.vehicle_min_distance))
-        return score
+            if joined_vehicle == len(platoon.vehicle_manager_list):
+                joined_platoon_list.append(platoon)
+
+        return score, joined_platoon_list
 
     
     def evaluate_status(self) -> Tuple[Dict[str, List[float]], bool]:
@@ -144,10 +160,10 @@ class OracleManager(EvaluationManager):
             if status['ran_light']:
                 score['ran_light'].append(True)
         
-        is_success = False
+        is_collision = False
         if any(score['collision']):
-            is_success = True
-        return score, is_success
+            is_collision = True
+        return score, is_collision
         
         
     def evaluate_acc(self) -> Dict[str, List[float]]:

@@ -2,7 +2,6 @@ import copy
 import torch.multiprocessing as mp
 import os
 import random
-import time
 import carla
 from opencda.core.application.platooning import platooning_manager
 from opencda.core.common.cav_world import CavWorld
@@ -97,7 +96,7 @@ class Scenario:
         else:
             self.spectator_vehicle = self.single_cav_list[0].vehicle
         self.operation = operation.Operation(self)
-        
+        self.init_mutator()
 
 
     def ScenarioManager(self, scenario_params) -> Union[sim_api.ScenarioManager, cosim_api.CoScenarioManager]:
@@ -172,7 +171,6 @@ class Scenario:
 
                 self.scenario_manager.close()
 
-                # utils_.check_carla()
                 for platoon in self.platoon_list:
                     platoon.destroy()
                 for cav in self.single_cav_list:
@@ -182,14 +180,8 @@ class Scenario:
                     r.destroy()
                 for v in self.bg_veh_list:
                     v.destroy()
+                del self.operation
             finally:
-                # set carla synchronous mode to False
-                # if self.traffic_manager:
-                #     self.traffic_manager.shut_down()
-                # settings = self.scenario_manager.world.get_settings()
-                # settings.synchronous_mode = False
-                # self.scenario_manager.world.apply_settings(settings)
-                # self.raw_param['sync_mode'] = False
                 return score, is_success
 
 
@@ -236,68 +228,172 @@ class Scenario:
         opt.record_file = f"{map}_{'cosim' if opt.sumo else 'carla'}.log"
         
 
-    
-    def set_traffic(self):
-        ''' 设置交通流 '''
-        pass
-
-
-    def set_task(self):
-        ''' 设置任务 '''
-        pass
-
-    def mutate(self):
-        ''' 变异场景 '''
-        random.seed(os.urandom(4))
-        # TODO: 改变场景参数
-        if opt.mutate_strategy == 'weather':
+    # HACK: 应该在init之前变异字典
+    def mutate(self, strategy=None):
+        ""
+        if strategy == 'weather':
             self.operation.set_weather()
-        elif opt.mutate_strategy == 'traffic':
+            self.is_mutated = True
+        elif strategy == 'traffic' and not opt.sumo:
             self.operation.set_traffic()
-        elif opt.mutate_strategy == 'task':
-            self.operation.set_task()
+            self.is_mutated = True
+        elif strategy == 'actor' and not opt.sumo:
+            self.operation.set_actor()
+            self.is_mutated = True
         else:
-            random.choice([self.operation.set_weather, self.operation.set_traffic, self.operation.set_task])()
+            self.mutate(random.choice(opt.mutate_world_strategy))
 
+    @staticmethod
+    def mutate_param(param, strategy=None):
+        """
+        Mutates the scenario parameters based on the given parameter dictionary.
+
+        Args:
+            param (dict): The parameter dictionary containing mutation settings.
+        """
+        if strategy == 'noise':
+            operation.Operation.set_noise(param)
+            return True
+        elif strategy == 'platoon':
+            operation.Operation.set_platoon(param)
+            return True
+        else:
+            strategy = random.choice(opt.mutate_strategy)
+            if strategy in opt.mutate_param_strategy: 
+                return Scenario.mutate_param(param, strategy)
+            else:
+                return False
+            
+            
+    def init_actor(self, actor):
+        """
+        Initializes the actors in the simulation.
+
+        Args:
+            actor (carla.Actor): The actor's parameters.
+        """
+        self.mutator = {
+            'vehicle_list': [],
+            'walker_list': [],
+            'rsu_list': []
+        }
+        vehicle_list = actor.get('vehicle_list', [])
+        walker_list = actor.get('walker_list', [])
+        rsu_list = actor.get('rsu_list', [])
+        for vehicle in vehicle_list:
+            self.spawn_vehicle(vehicle)
+            self.mutator['vehicle_list'].append(vehicle)
+        for walker in walker_list:
+            self.spawn_walker(walker)
+            self.mutator['walker_list'].append(walker)
+        for rsu in rsu_list:
+            self.spawn_rsu(rsu)
+            self.mutator['rsu_list'].append(rsu)
+
+
+    def spawn_vehicle(self, vehicle):
+        """
+        Spawns a vehicle in the simulation.
+
+        Args:
+            vehicle (carla.Vehicle): The vehicle's parameters.
+        """
+        world = self.scenario_manager.world
+        blueprint = world.get_blueprint_library().find(vehicle.get('blueprint'))
+        self.operation.spawn_vehicle(
+            carla.Transform(
+                carla.Location(x=vehicle.get('x'), y=vehicle.get('y'), z=vehicle.get('z')),
+                carla.Rotation(pitch=vehicle.get('pitch'), yaw=vehicle.get('yaw'), roll=vehicle.get('roll'))
+            ),
+            blueprint,
+            vehicle.get('strategy'),
+            False
+        )
+
+        
+    def spawn_walker(self, walker: dict):
+        """
+        Spawns a walker in the simulation.
+
+        Args:
+            walker (dict): The walker's parameters.
+        """
+        world = self.scenario_manager.world
+        blueprint = world.get_blueprint_library().find(walker.get('blueprint'))
+        transform = carla.Transform(
+            carla.Location(x=walker.get('x'), y=walker.get('y'), z=walker.get('z')),
+            carla.Rotation(pitch=walker.get('pitch'), yaw=walker.get('yaw'), roll=walker.get('roll'))
+        )
+        destination = walker.get('destination')
+        self.operation.spawn_walker(
+            opt.walker_speed_min,
+            opt.walker_speed_max,
+            walker.get('speed'),
+            carla.Location(destination.x, destination.y, destination.z) if any(destination.values()) else None,
+            transform,
+            blueprint,
+            False,
+            walker.get('strategy')
+        )
+
+    
+    def init_mutator(self):
+        ''' 初始化变异器 '''
+        mutator = self.raw_param.get('mutator',{})
+        self.init_actor(mutator.get('actor', {}))
+
+    
     def get_raw_param(self):
         """Override __dict__ to return the raw parameters."""
         # self.raw_param['sync_mode'] = True
         return self.raw_param
 
+
 def make_and_run(scenario_params):
+    random.seed(os.urandom(4))
+    is_mutated = Scenario.mutate_param(scenario_params)
     scenario = Scenario(scenario_params)
-    scenario.mutate()
+    if not is_mutated: scenario.mutate()
     score, is_success = scenario.run()
-    return score, is_success, copy.deepcopy(scenario.get_raw_param())
+    return (score, is_success, copy.deepcopy(scenario.get_raw_param()))
+
+
+def _wrapped_make_and_run(scenario_params, queue):
+    """处理场景运行的包装函数，供多进程调用"""
+    try:
+        result = make_and_run(scenario_params)
+        queue.put(result)
+    except Exception as e:
+        import traceback
+        error_msg = f"Error occurred: {str(e)}\n{traceback.format_exc()}"
+        queue.put(error_msg)
 
 def process_run(scenario_params):
-    # 使用torch.multiprocessing并设置启动方法
-    result_queue = mp.Queue()
-    def wrapped_func(scenario_params, queue):
-        try:
-            result = make_and_run(scenario_params)
-            queue.put(result)
-        except Exception as e:
-            queue.put(f"Error occurred: {str(e)}")
-    
-    p = mp.Process(target=wrapped_func, args=(scenario_params, result_queue))
+    # 创建队列用于获取结果
+    ctx = mp.get_context('spawn')
+    result_queue = ctx.Queue()
+    p = ctx.Process(target=_wrapped_make_and_run, args=(scenario_params, result_queue))
     p.start()
-    p.join(10 * 60)
+    p.join(3 * 60)
     
     if p.is_alive():
         print('time out, kill the process')
         p.kill()
-        return None
-    else:
-        if not result_queue.empty():
-            return result_queue.get()
-        else:
-            raise Exception("exec failed")
-
-if __name__ == '__main__':
-    param = utils_.get_param('../log/param/2025_03_25-18_30/Town06_0_2_3.yaml')
-
-    utils_.restart_carla()
+    if not result_queue.empty():
+        return result_queue.get()
+    else: return None
     
-    score, is_success, params = process_run(param)
-    print(score, is_success, params)
+    
+# for test
+if __name__ == '__main__':
+    utils_.restart_carla()
+    file = 'platoon_joining_town06_carla.yaml'
+    param = utils_.get_param(file)
+    param['map'] = utils_.get_map_name(file)
+
+    print(make_and_run(param))
+    print(1)
+    # utils_.restart_carla()
+    
+    # score, is_success, params = make_and_run(param)
+    # print(score, is_success, params)

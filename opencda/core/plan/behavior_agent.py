@@ -85,6 +85,7 @@ class BehaviorAgent(object):
 
     def __init__(self, vehicle, carla_map, config_yaml):
 
+        self.joined = False
         self.vehicle = vehicle
         # ego pos(transform) and speed(km/h) retrieved from localization module
         self._ego_pos = None
