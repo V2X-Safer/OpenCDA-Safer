@@ -104,7 +104,7 @@ log_level = {
 	'warning': True,
 	'error': True
 }
-debug = False
+debug = True
 debug_indent = 4
 debug_width = 100
 debug_depth = 2

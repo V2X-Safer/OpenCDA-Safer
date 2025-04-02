@@ -1,4 +1,3 @@
-import stat
 import carla
 from random import randrange
 import random
@@ -84,16 +83,24 @@ class Operation:
         )
 
     
+    def get_point_in_distance(self, in_distance: int = opt.near_distance, out_distance: int = opt.vehicle_min_distance):
+        points = []
+        for point in self.all_points:
+            if point.location.distance(self.scenario.spectator_vehicle.get_transform().location) <= in_distance \
+                and point.location.distance(self.scenario.spectator_vehicle.get_transform().location) >= out_distance:
+                points.append(point)
+        return points
+        
+
     def get_traffic(self):
         return self.scenario.traffic_manager
 
-    def get_spawn_point(self, distance: int = opt.near_distance):
-        spawn_point = random.choice(self.all_points)
-        # 确保生成位置在参数范围内，并且不小于最小距离
-        while not (spawn_point.location.distance(self.scenario.spectator_vehicle.get_transform().location) <= distance \
-            and spawn_point.location.distance(self.scenario.spectator_vehicle.get_transform().location) > opt.vehicle_min_distance \
-            and spawn_point is not None):
-            spawn_point = random.choice(self.all_points)
+    def get_spawn_point(self, in_distance: int = opt.near_distance, out_distance: int = opt.vehicle_min_distance):
+        points = self.get_point_in_distance(in_distance=in_distance, out_distance=out_distance)
+        while len(points) == 0:
+            in_distance += 10
+            points = self.get_point_in_distance(in_distance=in_distance, out_distance=out_distance)
+        spawn_point = random.choice(points)
         return spawn_point
     
 

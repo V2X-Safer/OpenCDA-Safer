@@ -387,7 +387,7 @@ def process_run(scenario_params):
 # for test
 if __name__ == '__main__':
     utils_.restart_carla()
-    file = 'platoon_joining_town06_carla.yaml'
+    file = 'single_town06_carla.yaml'
     param = utils_.get_param(file)
     param['map'] = utils_.get_map_name(file)
 
