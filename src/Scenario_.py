@@ -1,13 +1,11 @@
 import copy
-from scipy import rand
+import carla
 import torch.multiprocessing as mp
 import os
 import random
 import carla
-from opencda.core.application.platooning import platooning_manager
 from opencda.core.common.cav_world import CavWorld
 from opencda.core.common.vehicle_manager import VehicleManager
-from opencda.scenario_testing.evaluations.evaluate_manager import EvaluationManager
 from opencda.scenario_testing.utils import cosim_api, customized_map_api, sim_api
 from typing import Union
 from opencda.scenario_testing.utils.yaml_utils import add_current_time
@@ -16,6 +14,7 @@ from src import operation
 from src.oracle_manager import OracleManager
 import src.utils_ as utils_
 import opt
+from log import *
 
 class Scenario:
     '''
@@ -53,10 +52,8 @@ class Scenario:
         观察者视角实例，用于控制场景渲染的摄像机视角，默认设置为俯视视角。
     '''
 
-    # HACK: 此处先初始化了, 应该先变异参数后在run时初始化
     def __init__(self, scenario_params):
         self.init_opt(scenario_params)
-        utils_.debug_dict(opt.__dict__, opt.debug)
         if opt.debug:
             scenario_params['world']['client_port'] = opt.carla_port
         
@@ -128,7 +125,6 @@ class Scenario:
             # platooning_manager won't create cav_world
             manager_args['cav_world'] = CavWorld(opt.apply_ml)
 
-        utils_.debug_dict(manager_args, opt.debug, ['scenario_params'])
         return self.scenario_manager_cls(**manager_args)
 
 
@@ -137,7 +133,6 @@ class Scenario:
         ''' 运行场景 '''
         try: 
             while True:
-                # HACK: 应该OpenCDA的一个bug 需要手动tick一次cav_world
                 self.scenario_manager.cav_world.tick()
                 self.scenario_manager.tick()
                 transform = self.spectator_vehicle.get_transform()
@@ -162,9 +157,12 @@ class Scenario:
                 for rsu in self.rsu_list:
                     rsu.update_info()
                     rsu.run_step()
+        
+        except Exception as e:
+            log_exception('run failed')
 
         finally:
-            score, is_success = self.oracle_manager.evaluate()
+            score, is_collision = self.oracle_manager.evaluate()
 
             try:
                 if opt.record:
@@ -182,8 +180,19 @@ class Scenario:
                 for v in self.bg_veh_list:
                     v.destroy()
                 del self.operation
+                # self.scenario_manager.client.apply_batch(
+                #     carla.command.DestroyActor(x) 
+                #     for x in self.scenario_manager.world.get_actors()
+                # )
+                # settings = self.scenario_manager.world.get_settings()
+                # settings.synchronous_mode = False
+                # settings.fixed_delta_seconds = None
+                # self.scenario_manager.world.apply_settings(settings)
+            except Exception as e:
+                logger.exception('destroy failed')
+
             finally:
-                return score, is_success
+                return score, is_collision
 
 
     def init_opt(self, scenario_params):
@@ -233,16 +242,13 @@ class Scenario:
     def mutate(self, strategy=None):
         if strategy == 'weather':
             self.operation.set_weather()
-            if opt.debug: utils_.pprint('mutate weather')
-            self.is_mutated = True
+            log_process_info('mutate weather')
         elif strategy == 'traffic' and not opt.sumo:
             self.operation.set_traffic()
-            if opt.debug: utils_.pprint('mutate traffic')
-            self.is_mutated = True
+            log_process_info('mutate traffic')
         elif strategy == 'actor' and not opt.sumo:
             self.operation.set_actor()
-            if opt.debug: utils_.pprint('mutate actor')
-            self.is_mutated = True
+            log_process_info('mutate actor')
         else:
             self.mutate(random.choice(opt.mutate_world_strategy))
 
@@ -256,14 +262,14 @@ class Scenario:
         """
         if strategy == 'noise':
             operation.Operation.set_noise(param)
-            if opt.debug: utils_.pprint('mutate noise')
+            log_process_info('mutate noise')
             return True
         elif strategy == 'platoon':
             operation.Operation.set_platoon(param)
-            if opt.debug: utils_.pprint('mutate platoon')
+            log_process_info('mutate platoon')
             return True
         else:
-            strategy = random.choice(opt.mutate_strategy)
+            strategy = random.choice(opt.all_strategy)
             if strategy in opt.mutate_param_strategy: 
                 return Scenario.mutate_param(param, strategy)
             else:
@@ -355,13 +361,22 @@ class Scenario:
 
 
 def make_and_run(scenario_params):
-    if not scenario_params.get('world', None): scenario_params['world'] = {}
-    scenario_params['world']['seed'] = os.urandom(4)
-    is_mutated = Scenario.mutate_param(scenario_params)
+    seed = random.randint(1,9999)
+    random.seed(seed)
+    if not scenario_params.get('world'): scenario_params['world'] = {}
+    # 变异opencda中的变量
+    if not opt.raw: 
+        scenario_params['world']['seed'] = seed
+        is_mutated = Scenario.mutate_param(scenario_params)
+
     scenario = Scenario(scenario_params)
-    if not is_mutated: scenario.mutate()
-    score, is_success = scenario.run()
-    return (score, is_success, copy.deepcopy(scenario.get_raw_param()))
+
+    # 变异carla中的变量 确保两者取其一变异
+    if not opt.raw and not is_mutated: 
+        scenario.mutate()
+
+    score, is_collision = scenario.run()
+    return (score, is_collision, copy.deepcopy(scenario.get_raw_param()))
 
 
 def _wrapped_make_and_run(scenario_params, queue):
@@ -383,7 +398,7 @@ def process_run(scenario_params):
     p.join(3 * 60)
     
     if p.is_alive():
-        print('time out, kill the process')
+        log_process_critical('time out, kill the process')
         p.kill()
     if not result_queue.empty():
         return result_queue.get()
@@ -393,12 +408,13 @@ def process_run(scenario_params):
 # for test
 if __name__ == '__main__':
     utils_.restart_carla()
-    file = 'platoon_joining_2lanefree_cosim.yaml'
+    file = '/home/test/V2X/OpenCDA/OpenCDA/src/log/param/2025_04_04-14_00/Town06_single_0_3.yaml'
     param = utils_.get_param(file)
     param['map'] = utils_.get_map_name(file)
 
-    print(make_and_run(param))
-    print(1)
+    log_process_info(make_and_run(param))
+    log_process_info(make_and_run(param))
+    log_process_info(1)
     # utils_.restart_carla()
     
     # score, is_success, params = make_and_run(param)

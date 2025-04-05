@@ -1,15 +1,11 @@
-import datetime
 import os
 import glob
-import uuid
 from omegaconf import OmegaConf
 import opt
-from pprint import PrettyPrinter
 import subprocess
 import time
-import socket
+from log import *
 
-pprint = PrettyPrinter(indent=opt.debug_indent, width=opt.debug_width, depth=opt.debug_depth).pprint
 
 def restart_carla():
     """
@@ -44,16 +40,17 @@ def restart_carla():
         # sock.close()
         
         # Kill any existing Carla processes (including parent processes of zombies)
+        log_process_debug('Restarting Carla...')
         if carla_pids  or has_defunct:
-            print(f"Found existing Carla processes or port {carla_port} in use")
+            log_process_debug(f"Found existing Carla processes or port {carla_port} in use")
             
             # Kill Carla processes
             for pid in carla_pids:
-                print(f"Killing Carla process with PID {pid}")
+                log_process_debug(f"Killing Carla process with PID {pid}")
                 try:
                     subprocess.run(["kill", "-9", str(pid)])
                 except Exception as e:
-                    print(f"Error killing process {pid}: {e}")
+                    log_process_critical(f"Error killing process {pid}: {e}")
             
             # If we had defunct processes, try to kill their parent processes
             if has_defunct:
@@ -62,7 +59,7 @@ def restart_carla():
                 
             # Wait for processes to terminate and port to be released
             time.sleep(1)
-            print("Carla processes have been terminated")
+            log_process_debug("Carla processes have been terminated")
             
             # Double-check if port is now free
             # sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -74,11 +71,10 @@ def restart_carla():
                 # print(f"Warning: Port {carla_port} is still in use after killing processes")
         
         # Start Carla using subprocess instead of fork
-        print("Starting Carla...")
         carla_cmd = [opt.carla_path, f"-carla-rpc-port={carla_port}"]
-        carla_process = subprocess.Popen(carla_cmd, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+        carla_process = subprocess.Popen(carla_cmd)
         
-        print(f"Carla started with PID {carla_process.pid}")
+        log_process_debug(f"Carla started with PID {carla_process.pid}")
         # Wait for Carla to initialize
         time.sleep(3)
         
@@ -93,7 +89,7 @@ def restart_carla():
             # sock.close()
             
     except Exception as e:
-        print(f"Error while managing Carla: {e}")
+        log_process_critical(f"Error while managing Carla: {e}")
 
 def save_param(param: dict, file_name: str, timestamp: str):
     """
@@ -120,19 +116,19 @@ def save_param(param: dict, file_name: str, timestamp: str):
         save_path = os.path.join(dir_path, file_name)
         OmegaConf.save(conf, save_path)
         
-        print(f"Parameters successfully saved to {file_name}")
+        log_process_info(f"Parameters successfully saved to {file_name}")
         
     except Exception as e:
-        print(f"Error saving parameters to {file_name}: {e}")
+        log_process_critical(f"Error saving parameters to {file_name}: {e}")
         
         # 尝试备用方法保存
         try:
             import yaml
             with open(file_name, 'w') as file:
                 yaml.dump(param, file, default_flow_style=False)
-                print(f"Parameters saved using PyYAML to {file_name}")
+                log_process_debug(f"Parameters saved using PyYAML to {file_name}")
         except Exception as backup_e:
-            print(f"Backup save method also failed: {backup_e}")
+            log_process_critical(f"Backup save method also failed: {backup_e}")
 
 def get_param(target_file: str, debug=False):
     # set default dir to test_yaml
@@ -172,7 +168,7 @@ def merge_dict(dict1: dict, dict2: dict):
 
 def get_seed(target_file_dir: str = opt.seed_dir):
     file_glob = glob.glob(target_file_dir + os.sep + '*.yaml')
-    return [file for file in file_glob if not any(black_file in file for black_file in ['test.yaml', 'v2xp', 'default.yaml', 'openscenario_carla.yaml'])]
+    return [file for file in file_glob if not any(black_file in file for black_file in ['test.yaml', 'v2xp', 'default.yaml', 'openscenario_carla.yaml', 'cosim'])]
 
 def get_xodr_path(xodr_file: str = '2lane_freeway_simplified.xodr'):
     return os.path.join(os.getcwd(),
@@ -180,20 +176,46 @@ def get_xodr_path(xodr_file: str = '2lane_freeway_simplified.xodr'):
                         'assets',
                         '2lane_freeway_simplified',
                         xodr_file)
-    
-def debug_hint(func):
-    def inner(*args, **kwargs):
-        if opt.debug: 
-            pprint(opt.debug_line)
-            res = func(*args, **kwargs)
-            pprint(opt.debug_line)
-            return res
-    return inner 
 
 
-@debug_hint
-def debug_dict(dict_: dict, debug=False, exclude=[]):
-    if not debug: return
-    for key, value in dict_.items():
-        if not key.startswith('__') and key not in exclude: 
-            pprint(f'{key}: {value}')
+def close_sumo():
+    """
+    检查SUMO是否正在运行，如果是则关闭它。
+    处理所有SUMO相关进程，包括sumo-gui、sumo和任何相关的TraCI进程。
+    """
+    try:
+        # 检查所有相关SUMO进程
+        result = subprocess.run(["ps", "aux"], capture_output=True, text=True)
+        sumo_processes = [line for line in result.stdout.splitlines() 
+                          if any(x in line for x in ["sumo-gui", "sumo ", "traci"])]
+        
+        sumo_pids = []
+        for line in sumo_processes:
+            parts = line.split()
+            if len(parts) > 1:
+                try:
+                    pid = int(parts[1])
+                    sumo_pids.append(pid)
+                except ValueError:
+                    pass
+        
+        # 如果找到SUMO进程，则终止它们
+        if sumo_pids:
+            log_process_debug(f"发现正在运行的SUMO进程，正在关闭...")
+            for pid in sumo_pids:
+                log_process_debug(f"正在终止SUMO进程 (PID: {pid})")
+                try:
+                    subprocess.run(["kill", "-9", str(pid)])
+                except Exception as e:
+                    log_process_critical(f"终止进程 {pid} 时出错: {e}")
+            
+            # 等待进程完全终止
+            time.sleep(1)
+            log_process_debug("SUMO进程已终止")
+            
+            # 确保所有SUMO相关进程都被终止
+            subprocess.run(["pkill", "-9", "-f", "sumo"])
+            subprocess.run(["pkill", "-9", "-f", "traci"])
+            
+    except Exception as e:
+        log_process_critical(f"检查和关闭SUMO时出错: {e}")

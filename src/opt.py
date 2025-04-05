@@ -14,12 +14,11 @@ vehicle_max_distance = 50
 acc_threshold = 5
 brake_threshold = 3
 angular_threshold = 0.5
-mutate_strategy = 'random'
 mutate_world_strategy = ['weather', 'actor', 'traffic']
 # mutate_world_strategy = ['actor']
 mutate_param_strategy = ['noise', 'platoon']
 all_strategy = mutate_param_strategy + mutate_world_strategy
-walker_strategy = 'random'
+walker_strategy = ['random']
 walker_speed_min = 1
 walker_speed_max = 2
 platoon_joined_penalty = 10
@@ -104,7 +103,8 @@ log_level = {
 	'warning': True,
 	'error': True
 }
-debug = True
+debug = False
+raw = False # wheather to mutate
 debug_indent = 4
 debug_width = 100
 debug_depth = 2

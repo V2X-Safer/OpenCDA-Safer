@@ -87,7 +87,7 @@ scenario:
       warm_up_speed: 30  # 提升协同变道触发速度
       platoon_max_speed: 22.22  # 与max_speed对应(80km/h)
       leader_accel_threshold: 1.8
-      destination: [630, 141.39, 0.3]
+      destination: [180, 141.39, 0.3]
       members: # the first one is regarded as leader by default
         - name: cav1ggVG
           spawn_position: [121.7194, 139.51, 0.3, 0, 0, 0] # x, y, z, roll, yaw, pitch

@@ -3,7 +3,6 @@ from opencda.core.application.platooning.platooning_manager import PlatooningMan
 from typing import Dict, List, Any, Optional, Tuple
 from opencda.scenario_testing.utils.sim_api import CavWorld
 import matplotlib.pyplot as plt
-# import typing
 from src import opt, utils_
 
 
@@ -149,16 +148,18 @@ class OracleManager(EvaluationManager):
             'offroad': [],
             'ran_light': []
         }
-        self.status_dict: dict = self.cav_world.get_ego_vehicle_manager().safety_manager.status_queue
-        for clock, status in self.status_dict:
-            if status['collision']:
-                score['collision'].append(True)
-            if status['stuck']:
-                score['stuck'].append(True)
-            if status['offroad']:
-                score['stuck'].append(True)
-            if status['ran_light']:
-                score['ran_light'].append(True)
+        status_dicts = [ vehicle_manager.safety_manager.status_queue
+                        for vehicle_manager in self.cav_world.get_vehicle_managers().values()] 
+        for status_dict in status_dicts:
+            for clock, status in status_dict:
+                if status['collision']:
+                    score['collision'].append(True)
+                if status['stuck']:
+                    score['stuck'].append(True)
+                if status['offroad']:
+                    score['stuck'].append(True)
+                if status['ran_light']:
+                    score['ran_light'].append(True)
         
         is_collision = False
         if any(score['collision']):
