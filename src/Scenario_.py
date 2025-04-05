@@ -1,4 +1,5 @@
 import copy
+from scipy import rand
 import torch.multiprocessing as mp
 import os
 import random
@@ -230,15 +231,17 @@ class Scenario:
 
     # HACK: 应该在init之前变异字典
     def mutate(self, strategy=None):
-        ""
         if strategy == 'weather':
             self.operation.set_weather()
+            if opt.debug: utils_.pprint('mutate weather')
             self.is_mutated = True
         elif strategy == 'traffic' and not opt.sumo:
             self.operation.set_traffic()
+            if opt.debug: utils_.pprint('mutate traffic')
             self.is_mutated = True
         elif strategy == 'actor' and not opt.sumo:
             self.operation.set_actor()
+            if opt.debug: utils_.pprint('mutate actor')
             self.is_mutated = True
         else:
             self.mutate(random.choice(opt.mutate_world_strategy))
@@ -253,9 +256,11 @@ class Scenario:
         """
         if strategy == 'noise':
             operation.Operation.set_noise(param)
+            if opt.debug: utils_.pprint('mutate noise')
             return True
         elif strategy == 'platoon':
             operation.Operation.set_platoon(param)
+            if opt.debug: utils_.pprint('mutate platoon')
             return True
         else:
             strategy = random.choice(opt.mutate_strategy)
@@ -350,7 +355,8 @@ class Scenario:
 
 
 def make_and_run(scenario_params):
-    random.seed(os.urandom(4))
+    if not scenario_params.get('world', None): scenario_params['world'] = {}
+    scenario_params['world']['seed'] = os.urandom(4)
     is_mutated = Scenario.mutate_param(scenario_params)
     scenario = Scenario(scenario_params)
     if not is_mutated: scenario.mutate()
@@ -387,7 +393,7 @@ def process_run(scenario_params):
 # for test
 if __name__ == '__main__':
     utils_.restart_carla()
-    file = 'single_town06_carla.yaml'
+    file = 'platoon_joining_2lanefree_cosim.yaml'
     param = utils_.get_param(file)
     param['map'] = utils_.get_map_name(file)
 

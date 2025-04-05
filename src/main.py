@@ -13,7 +13,7 @@ def main():
     current_datetime = datetime.datetime.now()
     timestamp = current_datetime.strftime("%Y_%m_%d-%H_%M")
     for index, file in enumerate(utils_.get_seed(opt.test_dir)):
-        if index < 4: continue
+        if index < -1: continue
         seed_param = utils_.get_param(file)
         map_name = utils_.get_map_name(file)
         seed_param['map'] = map_name
