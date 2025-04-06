@@ -1,7 +1,24 @@
 description: |-
   Copyright 2021 <UCLA Mobility Lab>
   Author: Runsheng Xu <rxx3386@ucla.edu>
-  Content: This is the scenario testing configuration file for single vehicle full-stack system in town06 with co-simulation
+  Content: This is the scenario testing configuration file for single vehicle testing in town06 with perception/localization activated
+
+
+world:
+  sync_mode: true
+  client_port: 2000
+  fixed_delta_seconds: 0.05
+  seed: 11 # seed for numpy and random
+  weather:
+    sun_altitude_angle: 85 # 90 is the midday and -90 is the midnight
+    cloudiness: 0 # 0 is the clean sky and 100 is the thickest cloud
+    precipitation: 0 # rain, 100 is the heaviest rain
+    precipitation_deposits: 0 # Determines the creation of puddles. Values range from 0 to 100, being 0 none at all and 100 a road completely capped with water.
+    wind_intensity: 0 # it will influence the rain
+    fog_density: 0 # fog thickness, 100 is the largest
+    fog_distance: 5  # Fog start distance. Values range from 0 to infinite.
+    fog_falloff: 0 # Density of the fog (as in specific mass) from 0 to infinity. The bigger the value, the more dense and heavy it will be, and the fog will reach smaller heights
+    wetness: 0
 
 # First define the basic parameters of the vehicles
 vehicle_base:
@@ -27,21 +44,23 @@ vehicle_base:
     ignore_traffic_light: false # whether to ignore traffic light
     collision_time_ahead: 2.0 # used for collision checking
 
-# define sumo simulation setting for traffic generation
-sumo:
-  port: ~
-  host: ~
-  gui: true
-  client_order: 1
-  step_length: ${world.fixed_delta_seconds}
 
+# define the background traffic control by carla
+carla_traffic_manager:
+  random: true # whether to random select vehicles' color and model
+  ignore_lights_percentage: 50 # whether set the traffic ignore traffic lights
+  vehicle_list: ~  # a number or a list
+  # Used only when vehicle_list is a number.
+  # x_min, x_max, y_min, y_max, x_step, y_step
+  range:
+    - [ 50, 450, 135, 145, 50, 4, 30]
 
 # define scenario. In this scenario, only a single CAV will be spawned
 scenario:
   single_cav_list: # this is for merging vehicle or single cav without v2x
     - name: cav1
       spawn_position: [47.7194, 139.51, 0.3, 0, 0, 0]
-      destination: [600, 145.51, 0.3]
+      destination: [480, 145.51, 0.3]
       v2x:
         communication_range: 45
       behavior:

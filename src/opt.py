@@ -94,22 +94,6 @@ lat_noise_max = 5.0   # 普通GPS在城市峡谷中的噪声
 lon_noise_min = 0.01  # 高精度RTK-GPS最小噪声
 lon_noise_max = 5.0   # 普通GPS在城市峡谷中的噪声
 
-# INFO: misc
-carla_version = '0.9.12'
-carla_path = '/home/test/V2X/OpenCDA/carla_0_9_12/CarlaUE4/Binaries/Linux/CarlaUE4-Linux-Shipping'
-maxsize = sys.maxsize
-log_level = {
-	'info': True,
-	'warning': True,
-	'error': True
-}
-debug = False
-raw = False # wheather to mutate
-debug_indent = 4
-debug_width = 100
-debug_depth = 2
-debug_line = '-' * 100
-carla_port = 2000
 
 
 
@@ -147,3 +131,22 @@ data_dump = False
 additional_recorder = False
 record_file = f"{map}_{'cosim' if sumo else 'carla'}.log"
 picture_save_file = 'location.jpg'
+
+
+# INFO: misc
+carla_version = '0.9.12'
+carla_path = '/home/test/V2X/OpenCDA/carla_0_9_12/CarlaUE4/Binaries/Linux/CarlaUE4-Linux-Shipping'
+maxsize = sys.maxsize
+log_level = {
+	'info': True,
+	'warning': True,
+	'error': True
+}
+debug = True
+raw = False # wheather to mutate
+debug_indent = 4
+debug_width = 100
+debug_depth = 2
+debug_line = '-' * 100
+carla_port = 2000
+log_timestamp_file = os.path.join(param_dir, 'current_time.txt')

@@ -3,6 +3,22 @@ description: |-
   Author: Runsheng Xu <rxx3386@ucla.edu>
   Content: This is the scenario testing configuration file for v2x perception data dumping
 
+world:
+  sync_mode: true
+  client_port: 2000
+  fixed_delta_seconds: 0.05
+  seed: 11 # seed for numpy and random
+  weather:
+    sun_altitude_angle: 90 # 90 is the midday and -90 is the midnight
+    cloudiness: 10 # 0 is the clean sky and 100 is the thickest cloud
+    precipitation: 50 # rain, 100 is the heaviest rain
+    precipitation_deposits: 50 # Determines the creation of puddles. Values range from 0 to 100, being 0 none at all and 100 a road completely capped with water.
+    wind_intensity: 0 # it will influence the rain
+    fog_density: 10 # fog thickness, 100 is the largest
+    fog_distance: 10  # Fog start distance. Values range from 0 to infinite.
+    fog_falloff: 10 # Density of the fog (as in specific mass) from 0 to infinity. The bigger the value, the more dense and heavy it will be, and the fog will reach smaller heights
+    wetness: 100
+
 # Define settings for multi-class blueprint spawning
 # Comment out this chunk of code or set use_multi_class_bp to be False if you don't want to spawn multi-class actors
 blueprint:
@@ -10,10 +26,10 @@ blueprint:
   bp_meta_path: "opencda/assets/blueprint_meta/bbx_stats_0912.json" # Define the path for loading the blueprint metadata for defining the class of each blueprint
   # Define blueprint type sample probabilities
   bp_class_sample_prob:
-    car: 0.5
-    truck: 0.1
-    bus: 0.1
-    bicycle: 0.1
+    car: 0.3
+    truck: 0.2
+    bus: 0.2
+    bicycle: 0.2
     motorcycle: 0.1
 
 
@@ -57,11 +73,11 @@ carla_traffic_manager:
   auto_lane_change: true
   random: true # whether to random select vehicles' color and model
   ignore_lights_percentage: 100 # whether set the traffic ignore traffic lights
-  vehicle_list: ~  # a number or a list
+  vehicle_list: 50  # a number or a list
   # Used only when vehicle_list is a number.
   #  x_min, x_max, y_min, y_max, x_step, y_step, vehicle_num
   range:
-    - [-11, 12, 100, 200, 3.5, 15, 25]
+    - [-50, 100, 80, 200, 10, 20, 50]
 
 # define scenario. In this scenario, a 4-vehicle platoon already exists.
 scenario:
@@ -73,7 +89,7 @@ scenario:
   single_cav_list:
     - name: cav1
       spawn_position: [12.00, 192.31, 0.3, 0, -90, 0]
-      destination: [67.12, 150.2, 1.0]
+      destination: [167.12, 150.2, 1.0]
       v2x:
         communication_range: 45
       behavior:
@@ -82,7 +98,7 @@ scenario:
           debug: false
     - name: cav2
       spawn_position: [-5.51, 110.24, 0.3, 0, 90, 0]
-      destination: [-2.43, 263, 0.3]
+      destination: [122.43, 263, 0.3]
       v2x:
         communication_range: 45
       behavior:

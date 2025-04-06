@@ -3,14 +3,23 @@ import logging
 import os
 import opt
 
-if not os.environ.get('LOG_DIR'):
-    timestamp = datetime.datetime.now().strftime("%Y_%m_%d-%H_%M")
-    os.environ['timestamp'] = timestamp
-    os.environ['LOG_DIR'] = os.path.join(opt.param_dir, timestamp)
-    os.makedirs(os.environ['LOG_DIR'], exist_ok=True)
+def init():
+    if not os.environ.get('LOG_DIR'):
+        timestamp = datetime.datetime.now().strftime("%Y_%m_%d-%H_%M")
+        with open(opt.log_timestamp_file, 'w') as f:
+            f.write(timestamp)
+        os.environ['timestamp'] = timestamp
+        os.environ['LOG_DIR'] = os.path.join(opt.param_dir, timestamp)
 
-timestamp = os.environ['timestamp']
-LOG_DIR = os.environ['LOG_DIR']
+        os.makedirs(os.environ['LOG_DIR'], exist_ok=True)
+
+if os.path.exists(opt.log_timestamp_file):
+    with open(opt.log_timestamp_file, 'r') as f:
+        timestamp = f.read().strip()
+else:
+    init()
+
+LOG_DIR = os.path.join(opt.param_dir, timestamp)
 
 # 主日志文件路径
 MAIN_LOG_FILE = os.path.join(LOG_DIR, 'main.log')

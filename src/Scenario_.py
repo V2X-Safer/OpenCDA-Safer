@@ -396,7 +396,7 @@ def process_run(scenario_params):
     p = ctx.Process(target=_wrapped_make_and_run, args=(scenario_params, result_queue))
     p.start()
     p.join(3 * 60)
-    
+
     if p.is_alive():
         log_process_critical('time out, kill the process')
         p.kill()
@@ -408,13 +408,12 @@ def process_run(scenario_params):
 # for test
 if __name__ == '__main__':
     utils_.restart_carla()
-    file = '/home/test/V2X/OpenCDA/OpenCDA/src/log/param/2025_04_04-14_00/Town06_single_0_3.yaml'
+    file = '/home/test/V2X/OpenCDA/OpenCDA/src/collision/platoon_joining_town06_carla_02.yaml'
     param = utils_.get_param(file)
     param['map'] = utils_.get_map_name(file)
 
     log_process_info(make_and_run(param))
-    log_process_info(make_and_run(param))
-    log_process_info(1)
+    print(1)
     # utils_.restart_carla()
     
     # score, is_success, params = make_and_run(param)

@@ -14,7 +14,7 @@ def main():
     # fuzz
     utils_.restart_carla()
     for index, file in enumerate(utils_.get_seed(opt.test_dir)):
-        if index < 1: continue
+        if index < 2: continue
         seed_param = utils_.get_param(file)
         map_name = utils_.get_map_name(file)
         seed_param['map'] = map_name
@@ -57,7 +57,6 @@ def main():
                 params = {'score': score, 'is_collision': is_collision, **params}
                 bscenario_param_list.append((params, score))
                 utils_.save_param(params, f"{map_name}_{'platoon' if opt.v2x else 'single'}_{dcycle_cnt}_{bcycle_cnt}.yaml", timestamp)
-                is_collision = True
                 
                 if is_collision: break
                 bcycle_cnt += 1

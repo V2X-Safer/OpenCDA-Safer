@@ -146,13 +146,54 @@ def get_param(target_file: str, debug=False):
     return merged_dict
 
 def get_map_name(target_file: str):
-    if 'town05' in target_file:
+    """
+    根据目标文件名确定地图名称。
+    
+    Parameters
+    ----------
+    target_file : str
+        目标配置文件名
+        
+    Returns
+    -------
+    str
+        对应的CARLA地图名称
+    """
+    # 基本CARLA城市地图
+    if 'town05' in target_file.lower():
         return 'Town05'
-    elif 'town06' in target_file:
+    elif 'town06' in target_file.lower():
         return 'Town06'
-    elif '2lanefree' in target_file:
+    elif 'town01' in target_file.lower():
+        return 'Town01'
+    elif 'town02' in target_file.lower():
+        return 'Town02'
+    elif 'town03' in target_file.lower():
+        return 'Town03'
+    elif 'town04' in target_file.lower():
+        return 'Town04'
+    elif 'town07' in target_file.lower():
+        return 'Town07'
+    elif 'town10' in target_file.lower():
+        return 'Town10HD'
+    elif 'town11' in target_file.lower():
+        return 'Town11'
+    elif 'town12' in target_file.lower():
+        return 'Town12'
+        
+    # 自定义地图
+    elif '2lanefree' in target_file.lower():
         return '2lane_freeway_simplified'
+    elif 'highway' in target_file.lower():
+        return 'Highway'
+    elif 'oval' in target_file.lower():
+        return 'OvalTrack'
+    elif 'junction' in target_file.lower():
+        return 'ComplexJunction'
+        
+    # 默认地图
     else:
+        log_process_debug(f"未能识别地图名称 '{target_file}'，使用默认地图 'Town06'")
         return 'Town06'
 
 def get_vehicle_distance(vehicle1, vehicle2):
