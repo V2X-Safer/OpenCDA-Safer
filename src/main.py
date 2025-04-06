@@ -13,17 +13,18 @@ def main():
 
     # fuzz
     utils_.restart_carla()
-    for index, file in enumerate(utils_.get_seed(opt.test_dir)):
+    for index, file in enumerate(utils_.get_seed(opt.seed_dir)):
         if index < 2: continue
         seed_param = utils_.get_param(file)
         map_name = utils_.get_map_name(file)
         seed_param['map'] = map_name
         success_param = None
         test_param = seed_param
+        Scenario_.Scenario.init_opt(seed_param)
 
         log_process_info('select seed file: ' + file)
         dcycle_cnt = 0
-        # INFO: dcount mean deep search, bcount mean broad search 
+        # INFO: dcount mean deep search, bcount mean broad search
         while dcycle_cnt < opt.dcount:
             bscenario_param_list = []
             bcycle_cnt = 0
@@ -38,12 +39,15 @@ def main():
                         score, is_collision, params = Scenario_.make_and_run(test_param)
                     else:
                         ret_val = Scenario_.process_run(test_param)
-                        if not ret_val: raise ValueError("exec failed")
+                        if not ret_val: 
+                            log_process_critical("exec failed")
+                            raise ValueError("exec failed")
                         elif type(ret_val) == str:
                             log_process_critical(ret_val)
                             raise ValueError("exec failed")
                         else:
                             score, is_collision, params = ret_val[0], ret_val[1], ret_val[2]
+                            log_process_info(f"score: {score}, is_collision: {is_collision}")
                     
                 except Exception as e:
                     utils_.restart_carla()
@@ -52,26 +56,28 @@ def main():
                 if not opt.debug: utils_.restart_carla()
                 if opt.sumo: utils_.close_sumo()
                 
-                if params.get('score'): del params['score']
-                if params.get('is_collision'): del params['is_collision']
+                params['score'] = score
+                params['is_collision'] = is_collision
                 params = {'score': score, 'is_collision': is_collision, **params}
                 bscenario_param_list.append((params, score))
-                utils_.save_param(params, f"{map_name}_{'platoon' if opt.v2x else 'single'}_{dcycle_cnt}_{bcycle_cnt}.yaml", timestamp)
+                utils_.save_param(params, 
+                                  map_name,
+                                  dcycle_cnt,
+                                  bcycle_cnt,
+                                  timestamp,
+                                  'platoon' if opt.v2x else 'single',
+                                  'cosim' if opt.sumo else 'carla')
                 
                 if is_collision: break
                 bcycle_cnt += 1
 
             # INFO: if collision car is success, set test_scenario to mutate
             # INFO: else set the highest score scenario to test_scenario
-            if is_collision: 
+            if is_collision:
                 success_param = copy.deepcopy(params)
             else:
                 test_param = max(bscenario_param_list, key=lambda x: x[1])[0]
             
-            if opt.debug:
-                for ind, val in enumerate(bscenario_param_list):
-                    log_process_debug(f'index: {ind}, score: {val[1]}')
-
             dcycle_cnt += 1
 
     

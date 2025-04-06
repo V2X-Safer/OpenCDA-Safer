@@ -126,7 +126,8 @@ class OracleManager(EvaluationManager):
                     vehicle_transform = vehicle_manager.safety_manager.sensors[4].data[gnss_index]['transformation']
 
                     dis = utils_.get_distance(head_transform, vehicle_transform)
-                    if dis < opt.vehicle_min_distance:
+                    if dis < opt.vehicle_min_distance or \
+                        dis > opt.vehicle_max_distance:
                         score[platoon_index].append(abs(dis - opt.vehicle_min_distance))
             if joined_vehicle == len(platoon.vehicle_manager_list):
                 joined_platoon_list.append(platoon)

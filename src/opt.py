@@ -7,15 +7,14 @@ import sys
 dcount = 5
 bcount = 5
 near_distance = 20
-spawn_min_distance = 200
-spawn_max_distance = 500
+spawn_min_distance = 40
+spawn_max_distance = 200
 vehicle_min_distance = 3
-vehicle_max_distance = 50
+vehicle_max_distance = 40
 acc_threshold = 5
 brake_threshold = 3
 angular_threshold = 0.5
 mutate_world_strategy = ['weather', 'actor', 'traffic']
-# mutate_world_strategy = ['actor']
 mutate_param_strategy = ['noise', 'platoon']
 all_strategy = mutate_param_strategy + mutate_world_strategy
 walker_strategy = ['random']
@@ -23,14 +22,16 @@ walker_speed_min = 1
 walker_speed_max = 2
 platoon_joined_penalty = 10
 
-inter_gap_min = 0.5
-inter_gap_max = 2
-open_gap_min = 1
-open_gap_max = 3
-warm_up_speed_min = 20
-warm_up_speed_max = 40  # 添加最大预热速度
-communication_range_min = 10  # 添加最小通信范围
-communication_range_max = 50
+# 车队车辆间距参数（单位：秒）- 更合理的参数范围
+inter_gap_min = 0.2  # 最小跟车间隙时间
+inter_gap_max = 1.5  # 最大跟车间隙时间
+open_gap_min = 1.5   # 最小变道间隙时间
+open_gap_max = 3.0   # 最大变道间隙时间
+
+warm_up_speed_min = 40  # 最小协同驾驶初始速度(km/h)
+warm_up_speed_max = 90  # 最大协同驾驶初始速度(km/h)
+communication_range_min = 100  # 最小V2X通信范围(m)
+communication_range_max = 300  # 最大V2X通信范围(m)
 
 # 位置噪声参数(米)
 loc_noise_min = 0.0  # 最小位置噪声
@@ -142,7 +143,7 @@ log_level = {
 	'warning': True,
 	'error': True
 }
-debug = True
+debug = False
 raw = False # wheather to mutate
 debug_indent = 4
 debug_width = 100

@@ -1,4 +1,5 @@
 import copy
+from socket import timeout
 import carla
 import torch.multiprocessing as mp
 import os
@@ -195,7 +196,8 @@ class Scenario:
                 return score, is_collision
 
 
-    def init_opt(self, scenario_params):
+    @staticmethod
+    def init_opt(scenario_params):
         ''' 初始化 opt 参数 '''
         opt.map = scenario_params.get('map')
         opt.sumo_dir = os.path.join(os.getcwd(), 'opencda', 'assets', opt.map)
@@ -383,26 +385,42 @@ def _wrapped_make_and_run(scenario_params, queue):
     """处理场景运行的包装函数，供多进程调用"""
     try:
         result = make_and_run(scenario_params)
-        queue.put(result)
+        queue.put(result, timeout=3)
     except Exception as e:
         import traceback
         error_msg = f"Error occurred: {str(e)}\n{traceback.format_exc()}"
         queue.put(error_msg)
 
-def process_run(scenario_params):
-    # 创建队列用于获取结果
-    ctx = mp.get_context('spawn')
-    result_queue = ctx.Queue()
-    p = ctx.Process(target=_wrapped_make_and_run, args=(scenario_params, result_queue))
-    p.start()
-    p.join(3 * 60)
+def _wrapped_make_and_run_pipe(scenario_params, conn):
+    """使用管道传递结果的包装函数"""
+    try:
+        result = make_and_run(scenario_params)
+        conn.send(result)
+    except Exception as e:
+        log_exception('get result, but failed to send')
+    finally:
+        conn.close()
 
+def process_run(scenario_params):
+    ctx = mp.get_context('spawn')
+    parent_conn, child_conn = ctx.Pipe()
+    
+    p = ctx.Process(target=_wrapped_make_and_run_pipe, args=(scenario_params, child_conn))
+    p.start()
+    
+    timeout = 3 * 60
+    p.join(timeout)
+    
     if p.is_alive():
-        log_process_critical('time out, kill the process')
+        if parent_conn.poll(2):
+            result = parent_conn.recv()
+        else:
+            result = None
+        if not result: log_process_critical('time out, kill the process')
+        parent_conn.close()
         p.kill()
-    if not result_queue.empty():
-        return result_queue.get()
-    else: return None
+        return result
+    return parent_conn.recv()
     
     
 # for test

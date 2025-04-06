@@ -197,6 +197,7 @@ class Operation:
         while not vehicle:
             spawn_point = self.get_spawn_point()
             vehicle = self.scenario_manager.world.try_spawn_actor(vehicle_bp, spawn_point)
+        self.scenario_manager.world.tick()
         self.actor_list.append(vehicle)
         
         # 根据策略设置车辆行为

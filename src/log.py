@@ -5,6 +5,7 @@ import opt
 
 def init():
     if not os.environ.get('LOG_DIR'):
+        global timestamp
         timestamp = datetime.datetime.now().strftime("%Y_%m_%d-%H_%M")
         with open(opt.log_timestamp_file, 'w') as f:
             f.write(timestamp)

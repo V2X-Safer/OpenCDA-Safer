@@ -91,7 +91,7 @@ def restart_carla():
     except Exception as e:
         log_process_critical(f"Error while managing Carla: {e}")
 
-def save_param(param: dict, file_name: str, timestamp: str):
+def save_param(param: dict, map_name: str, dcycle: int, bcycle: int, timestamp: str, app_type: str = 'single', sim_type: str = 'carla'):
     """
     将参数字典保存为YAML文件。
     
@@ -99,37 +99,49 @@ def save_param(param: dict, file_name: str, timestamp: str):
     ----------
     param : dict
         要保存的参数字典
-    save_path : str
-        保存的文件路径，应以.yaml结尾
+    map_name : str
+        地图名称
+    dcycle : int
+        深度循环计数
+    bcycle : int
+        广度循环计数
+    timestamp : str
+        时间戳
+    app_type : str
+        应用类型，如 'single' 或 'platoon'
+    sim_type : str
+        仿真类型，如 'carla' 或 'cosim'
     """
     try:
-        dir_path = os.path.join(opt.param_dir, timestamp)
-        if (dir_path and not os.path.exists(dir_path)):
+        folder_name = f"{map_name}_{app_type}_{sim_type}"
+        dir_path = os.path.join(opt.param_dir, timestamp, folder_name)
+        
+        if not os.path.exists(dir_path):
             os.makedirs(dir_path)
         
-        # 处理文件扩展名
-        if not file_name.endswith('.yaml'):
-            file_name = f"{file_name}.yaml"
-        
-        # 将字典转换为OmegaConf并保存
-        conf = OmegaConf.create(param)
+        file_name = f"d{dcycle}_b{bcycle}.yaml"
         save_path = os.path.join(dir_path, file_name)
+        
+        param['current_time'] = timestamp
+        
+        conf = OmegaConf.create(param)
         OmegaConf.save(conf, save_path)
         
-        log_process_info(f"Parameters successfully saved to {file_name}")
+        log_process_info(f"successfully save param to {save_path}")
         
     except Exception as e:
-        log_process_critical(f"Error saving parameters to {file_name}: {e}")
+        log_process_critical(f"保存参数到 {file_name} 时出错: {e}")
         
-        # 尝试备用方法保存
         try:
             import yaml
-            with open(file_name, 'w') as file:
+            os.makedirs(dir_path, exist_ok=True)
+            with open(save_path, 'w') as file:
                 yaml.dump(param, file, default_flow_style=False)
-                log_process_debug(f"Parameters saved using PyYAML to {file_name}")
+                log_process_debug(f"使用PyYAML将参数保存到 {save_path}")
         except Exception as backup_e:
-            log_process_critical(f"Backup save method also failed: {backup_e}")
+            log_process_critical(f"备用保存方法也失败: {backup_e}")
 
+            
 def get_param(target_file: str, debug=False):
     # set default dir to test_yaml
     default_yaml = config_yaml = os.path.join(opt.test_dir, 'default.yaml')
