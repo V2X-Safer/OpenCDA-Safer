@@ -1,0 +1,75 @@
+description: |-
+  Copyright 2021 <UCLA Mobility Lab>
+  Author: Runsheng Xu <rxx3386@ucla.edu>
+  Content: This is the scenario testing configuration file for v2x perception data dumping
+
+world:
+  sync_mode: true
+  client_port: 2000
+  fixed_delta_seconds: 0.05
+  seed: 11 # seed for numpy and random
+
+# Define settings for multi-class blueprint spawning
+# Comment out this chunk of code or set use_multi_class_bp to be False if you don't want to spawn multi-class actors
+blueprint:
+  use_multi_class_bp: true
+  bp_meta_path: "opencda/assets/blueprint_meta/bbx_stats_0912.json" # Define the path for loading the blueprint metadata for defining the class of each blueprint
+  # Define blueprint type sample probabilities
+  bp_class_sample_prob:
+    car: 0.3
+    truck: 0.2
+    bus: 0.2
+    bicycle: 0.2
+    motorcycle: 0.1
+
+
+# Define the basic parameters of the vehicles
+# First define the basic parameters of the vehicles
+vehicle_base:
+  sensing:
+    perception:
+      activate: true # when not activated, objects positions will be retrieved from server directly
+      camera:
+        visualize: 4 # how many camera images need to be visualized. 0 means no visualization for camera
+        num: 4 # how many cameras are mounted on the vehicle. Maximum 3(frontal, left and right cameras)
+        # relative positions (x,y,z,yaw) of the camera. len(positions) should be equal to camera num
+        positions:
+          - [2.5, 0, 1.0, 0]
+          - [0.0, 0.3, 1.8, 100]
+          - [0.0, -0.3, 1.8, -100]
+          - [-2.0, 0.0, 1.5, 180]
+
+    localization:
+      activate: true # when not activated, ego position will be retrieved from server directly
+      debug_helper:
+        show_animation: true # whether to show real-time trajectory plotting
+
+  behavior:
+    ignore_traffic_light: false # whether to ignore traffic light
+    collision_time_ahead: 2.0 # used for collision checking
+
+# define the background traffic control by carla
+
+
+# define scenario. In this scenario, a 4-vehicle platoon already exists.
+scenario:
+  single_cav_list:
+    - name: cav1
+      spawn_position: [-12.00, 102.31, 0.3, 0, 90, 0] #right
+      destination: [-65.00, 152.31, 0,3]
+      v2x:
+        communication_range: 45
+      behavior:
+        local_planner:
+          debug_trajectory: false
+          debug: false
+    - name: cav2
+      spawn_position: [12.00, 202.31, 0.3, 0, -90, 0] #right
+      destination: [65.00, 152.31, 0,3]
+      v2x:
+        communication_range: 45
+      behavior:
+        local_planner:
+          debug_trajectory: false
+          debug: false
+

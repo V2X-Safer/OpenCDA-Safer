@@ -426,7 +426,7 @@ def process_run(scenario_params):
 # for test
 if __name__ == '__main__':
     utils_.restart_carla()
-    file = '/home/test/V2X/OpenCDA/OpenCDA/src/collision/platoon_joining_town06_carla_02.yaml'
+    file = '/home/test/V2X/OpenCDA/OpenCDA/src/collision/single_town05_cosim.yaml'
     param = utils_.get_param(file)
     param['map'] = utils_.get_map_name(file)
 

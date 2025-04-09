@@ -14,7 +14,7 @@ def main():
     # fuzz
     utils_.restart_carla()
     for index, file in enumerate(utils_.get_seed(opt.seed_dir)):
-        if index < 2: continue
+        # if index < 2: continue
         seed_param = utils_.get_param(file)
         map_name = utils_.get_map_name(file)
         seed_param['map'] = map_name
