@@ -2,7 +2,21 @@ description: |-
   Copyright 2021 <UCLA Mobility Lab>
   Author: Runsheng Xu <rxx3386@ucla.edu>
   Content: This is the scenario testing configuration file town05 cosimulation.
-
+world:
+  sync_mode: true
+  client_port: 2000
+  fixed_delta_seconds: 0.05
+  seed: 11 # seed for numpy and random
+  weather:
+    sun_altitude_angle: 45 # 90 is the midday and -90 is the midnight
+    cloudiness: 0 # 0 is the clean sky and 100 is the thickest cloud
+    precipitation: 0 # rain, 100 is the heaviest rain
+    precipitation_deposits: 0 # Determines the creation of puddles. Values range from 0 to 100, being 0 none at all and 100 a road completely capped with water.
+    wind_intensity: 0 # it will influence the rain
+    fog_density: 0 # fog thickness, 100 is the largest
+    fog_distance: 5  # Fog start distance. Values range from 0 to infinite.
+    fog_falloff: 0 # Density of the fog (as in specific mass) from 0 to infinity. The bigger the value, the more dense and heavy it will be, and the fog will reach smaller heights
+    wetness: 0
 
 
 # First define the basic parameters of the vehicles
@@ -30,14 +44,46 @@ sumo:
 scenario:
   single_cav_list: # this is for merging vehicle or single cav without v2x
     - name: cav1
-      spawn_position: [-52, -10, 0.60, 0, 90, 0]  #left
+      spawn_position: [-52, -20, 0.60, 0, 90, 0] #right:90 left:-90  up:0  down:180     
+      #left_down[-55,-20,0.6,0,90,0]   right_up[-43,15,0.6,0,-90,0]
+      #right_dowm[-65,7,0.6,0,0,0]     left_up[-37,-5,0.6,180,0]  
       # this parameter will overwrite the spawn position, when it is set, the vehicle is spawn
       # at the merging lane. 0.5 means it is spawn at the middle of the whole merging lange.
       # spawn_special: [0.34]
-      destination: [-52,30, 0.6]
+      destination: [100, 10, 0.6]
       v2x:
         communication_range: 45
       behavior:
         local_planner:
           debug_trajectory: true
           debug: false
+  platoon_list:
+    - name: platoon1
+      inter_gap: 0.8     # 缩短理想跟车时间间隔(原0.6秒)
+      open_gap: 1.5      # 缩小变道间隙需求(原1.2秒)
+      warm_up_speed: 30  # 提升协同变道触发速度
+      platoon_max_speed: 22.22  # 与max_speed对应(80km/h)
+      leader_accel_threshold: 1.8
+      destination: [100, 10, 0.6]
+      members: # the first one is regarded as leader by default
+        - name: cav1ggVG
+          spawn_position: [-43, 35, 0.6, 0, -90, 0] # x, y, z, roll, yaw, pitch
+          sensing:
+            perception:
+              activate: true
+              camera:
+                visualize: 1 # how many camera images need to be visualized. 0 means no visualization for camera
+                num: 1 # how many cameras are mounted on the vehicle. Maximum 3(frontal, left and right cameras)
+                # relative positions (x,y,z,yaw) of the camera. len(positions) should be equal to camera num
+                positions:
+                  - [2.5, 0, 1.0, 0]
+          behavior:
+            local_planner:
+              debug_trajectory: false
+              debug: false
+        - name: cav2
+          spawn_position: [-43, 45, 0.6, 0, -90, 0]
+        - name: cav3
+          spawn_position: [-43, 55, 0.6, 0, -90, 0]
+        - name: cav4
+          spawn_position: [-43, 65, 0.6, 0, -90, 0]
