@@ -32,29 +32,30 @@ CONSOLE_LOG_LEVEL = logging.INFO  # 默认INFO级别
 logger = logging.getLogger('simlog')
 logger.setLevel(logging.DEBUG)  # 设置日志级别为DEBUG
 
-# 日志格式
-main_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-short_formatter = logging.Formatter('%(asctime)s - %(levelname)s  - %(message)s', datefmt='%H:%M:%S')
-exception_formatter = logging.Formatter('%(asctime)s - %(levelname)s - \n%(exc_info)s', datefmt='%H:%M:%S')
+if len(logger.handlers) == 0:
+    # 日志格式
+    main_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    short_formatter = logging.Formatter('%(asctime)s - %(levelname)s  - %(message)s', datefmt='%H:%M:%S')
+    exception_formatter = logging.Formatter('%(asctime)s - %(levelname)s - \n%(exc_info)s', datefmt='%H:%M:%S')
 
-# 主日志处理器（追加模式）
-main_handler = logging.FileHandler(MAIN_LOG_FILE, mode='a') 
-main_handler.setFormatter(main_formatter)
-main_handler.setLevel(logging.DEBUG)
+    # 主日志处理器（追加模式）
+    main_handler = logging.FileHandler(MAIN_LOG_FILE, mode='a') 
+    main_handler.setFormatter(main_formatter)
+    main_handler.setLevel(logging.DEBUG)
 
-# 错误调用栈处理器（追加于主日志）
-exception_handler = logging.FileHandler(MAIN_LOG_FILE, mode='a') 
-exception_handler.setFormatter(exception_formatter)
-exception_handler.setLevel(logging.ERROR)
+    # 错误调用栈处理器（追加于主日志）
+    exception_handler = logging.FileHandler(MAIN_LOG_FILE, mode='a') 
+    exception_handler.setFormatter(exception_formatter)
+    exception_handler.setLevel(logging.ERROR)
 
-# 控制台信息打印处理器
-console_handler = logging.StreamHandler()
-console_handler.setFormatter(short_formatter)
-console_handler.setLevel(CONSOLE_LOG_LEVEL)  # 使用全局变量
+    # 控制台信息打印处理器
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(short_formatter)
+    console_handler.setLevel(CONSOLE_LOG_LEVEL)  # 使用全局变量
 
-# 添加处理器
-logger.addHandler(main_handler)
-logger.addHandler(console_handler)
+    # 添加处理器
+    logger.addHandler(main_handler)
+    logger.addHandler(console_handler)
 
 
 def set_console_log_level(level):

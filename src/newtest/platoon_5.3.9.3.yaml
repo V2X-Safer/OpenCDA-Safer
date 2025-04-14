@@ -1,0 +1,65 @@
+description: |-
+  避让低速行驶车辆变道测试 - 符合T/CMAX 21005-2023标准5.3.9.3要求
+  测试编队避让低速车辆变道的能力
+
+world:
+  sync_mode: true
+  client_port: 2000
+  fixed_delta_seconds: 0.05
+  seed: 32
+
+vehicle_base:
+  sensing:
+    perception:
+      camera:
+        visualize: 1
+        num: 1
+        positions:
+          - [2.5, 0, 1.0, 0]
+    localization: &base_localize
+      gnss:
+        heading_direction_stddev: 0.1
+        speed_stddev: 0.1
+  behavior: &base_behavior
+    max_speed: 60
+    tailgate_speed: 70
+    overtake_allowed: false
+
+platoon_base:
+  max_capacity: 2
+  inter_gap: 0.6
+  open_gap: 1.2
+  warm_up_speed: 30
+
+scenario:
+  name: slow_vehicle_avoidance_test
+  platoon_list:
+    - name: slow_avoid_platoon
+      inter_gap: 0.6
+      open_gap: 1.2
+      warm_up_speed: 30
+      platoon_max_speed: 16.67
+      destination: [400, 143.51, 0.3]
+      members:
+        - name: lv_slow_avoid
+          spawn_position: [100.0, 139.51, 0.3, 0, 0, 0]
+        - name: fv_slow_avoid
+          spawn_position: [85.0, 139.51, 0.3, 0, 0, 0]
+
+  single_cav_list:
+    - name: vt_slow
+      spawn_position: [120.0, 139.51, 0.3, 0, 0, 0]
+      destination: [400, 139.51, 0.3]
+      behavior:
+        <<: *base_behavior
+        max_speed: 10
+
+  evaluation_points:
+    - position: 300.0
+      checks:
+        - name: lane_change_complete
+          type: bool
+          expected: true
+        - name: no_collision
+          type: bool
+          expected: true

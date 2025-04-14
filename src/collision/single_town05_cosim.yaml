@@ -57,6 +57,20 @@ scenario:
         local_planner:
           debug_trajectory: true
           debug: false
+    - name: cav2
+      spawn_position: [-43, 35, 0.60, 0, -90, 0] #right:90 left:-90  up:0  down:180     
+      #left_down[-55,-20,0.6,0,90,0]   right_up[-43,15,0.6,0,-90,0]
+      #right_dowm[-65,7,0.6,0,0,0]     left_up[-37,-5,0.6,180,0]  
+      # this parameter will overwrite the spawn position, when it is set, the vehicle is spawn
+      # at the merging lane. 0.5 means it is spawn at the middle of the whole merging lange.
+      # spawn_special: [0.34]
+      destination: [-43,-30, 0.6]
+      v2x:
+        communication_range: 45
+      behavior:
+        local_planner:
+          debug_trajectory: true
+          debug: false
   platoon_list:
     - name: platoon1
       inter_gap: 0.8     # 缩短理想跟车时间间隔(原0.6秒)

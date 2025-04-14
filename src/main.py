@@ -13,7 +13,7 @@ def main():
 
     # fuzz
     utils_.restart_carla()
-    for index, file in enumerate(utils_.get_seed(opt.seed_dir)):
+    for index, file in enumerate(utils_.get_seed(opt.standard_dir)):
         # if index < 2: continue
         seed_param = utils_.get_param(file)
         map_name = utils_.get_map_name(file)
@@ -65,7 +65,7 @@ def main():
                                   dcycle_cnt,
                                   bcycle_cnt,
                                   timestamp,
-                                  'platoon' if opt.v2x else 'single',
+                                  'platoon' if opt.platoon else 'single',
                                   'cosim' if opt.sumo else 'carla')
                 
                 if is_collision: break

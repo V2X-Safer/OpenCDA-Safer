@@ -376,9 +376,9 @@ class PerceptionManager:
         self.cav_world = weakref.ref(cav_world)()
         ml_manager = cav_world.ml_manager
 
-        if self.activate and data_dump:
-            sys.exit("When you dump data, please deactivate the "
-                     "detection function for precise label.")
+        # if self.activate and data_dump:
+        #     sys.exit("When you dump data, please deactivate the "
+        #              "detection function for precise label.")
 
         if self.activate and not ml_manager:
             sys.exit(

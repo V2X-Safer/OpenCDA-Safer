@@ -1,0 +1,116 @@
+description: |-
+  跟随车辆接管解散编队测试 - 符合T/CMAX 21005-2023标准5.3.2.2要求
+  测试跟随车辆在行驶过程中接管并解散编队的能力
+
+world:
+  sync_mode: true
+  client_port: 2000
+  fixed_delta_seconds: 0.05
+  seed: 14
+  weather:
+    sun_altitude_angle: 45
+    cloudiness: 20
+    precipitation: 0
+    precipitation_deposits: 0
+    wind_intensity: 0
+    fog_density: 0
+
+vehicle_base:
+  sensing:
+    perception:
+      camera:
+        visualize: 1  # 启用摄像头可视化
+        num: 1
+        positions:
+          - [2.5, 0, 1.0, 0]  # 前视摄像头
+      lidar:
+        visualize: false
+    localization: &base_localize
+      gnss:
+        heading_direction_stddev: 0.1
+        speed_stddev: 0.1
+      debug_helper:
+        show_animation: true
+        x_scale: 10.0
+        y_scale: 10.0
+  map_manager:
+    visualize: false
+    activate: false
+  behavior: &base_behavior
+    max_speed: 30  # 30 km/h 符合标准要求
+    tailgate_speed: 40
+    overtake_allowed: false
+    collision_time_ahead: 1.5
+
+platoon_base:
+  max_capacity: 2
+  inter_gap: 0.6
+  open_gap: 1.2
+  warm_up_speed: 30
+  follower_takeover: true  # 启用跟随车辆接管功能
+  takeover_notification: true  # 启用接管通知功能
+
+scenario:
+  platoon_list:
+    - name: takeover_platoon
+      inter_gap: 0.6
+      open_gap: 1.2
+      warm_up_speed: 30
+      platoon_max_speed: 8.33  # 30 km/h
+      leader_accel_threshold: 1.5
+      destination: [400, 139.51, 0.3]  # 400m长直道
+      takeover_position: 200.0  # 在x=200位置触发跟随车辆接管
+      members:
+        - name: lv_takeover
+          spawn_position: [100.0, 139.51, 0.3, 0, 0, 0]
+          behavior:
+            max_speed: 30
+            local_planner:
+              debug_trajectory: true
+              debug: true
+            notification:
+              audio: true  # 车内语音提示
+        - name: fv_takeover
+          spawn_position: [85.0, 139.51, 0.3, 0, 0, 0]
+          behavior:
+            takeover_capability: true  # 启用接管能力
+            takeover_type: "disband"  # 接管类型为解散编队
+            notification:
+              audio: true
+            takeover_response_time: 2.0  # 最大允许响应时间(秒)
+
+  # 评估标准检查点
+  evaluation_points:
+    - position: 200.0
+      checks:
+        - name: takeover_triggered
+          type: bool
+          expected: true
+          description: "是否触发接管流程"
+    - position: 210.0  # 接管后10米处检查
+      checks:
+        - name: platoon_disbanded
+          type: bool
+          expected: true
+          description: "编队是否已解散"
+        - name: audio_notification
+          type: bool
+          expected: true
+          description: "是否发出车内语音提示"
+        - name: takeover_time
+          type: float
+          max: 10.0  # 10秒内完成解散
+          description: "从接管到解散完成的时间"
+        - name: fv_autonomy
+          type: bool
+          expected: true
+          description: "跟随车辆是否获得独立控制权"
+
+  # 背景交通设置(单向双车道)
+  carla_traffic_manager:
+    global_distance: 3.0
+    global_speed_perc: -20
+    ignore_lights_percentage: 0
+    vehicle_list:
+      - spawn_position: [150.0, 143.51, 0.3, 0, 0, 0]  # 相邻车道车辆
+        vehicle_speed_perc: -10

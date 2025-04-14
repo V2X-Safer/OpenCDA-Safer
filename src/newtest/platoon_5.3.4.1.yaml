@@ -1,0 +1,69 @@
+description: |-
+  编队鸣笛与转向灯同步测试 - 符合T/CMAX 21005-2023标准5.3.4.1要求
+  测试编队车辆灯光和声音信号的同步能力
+
+world:
+  sync_mode: true
+  client_port: 2000
+  fixed_delta_seconds: 0.05
+  seed: 19
+  weather:
+    sun_altitude_angle: 45
+    cloudiness: 30
+    precipitation: 0
+
+vehicle_base:
+  sensing:
+    perception:
+      camera:
+        visualize: 1
+        num: 1
+        positions:
+          - [2.5, 0, 1.0, 0]
+      lidar:
+        visualize: false
+    localization: &base_localize
+      gnss:
+        heading_direction_stddev: 0.1
+        speed_stddev: 0.1
+  behavior: &base_behavior
+    max_speed: 60
+    tailgate_speed: 70
+    overtake_allowed: false
+
+platoon_base:
+  max_capacity: 2
+  inter_gap: 0.6
+  open_gap: 1.2
+  warm_up_speed: 30
+
+scenario:
+  name: horn_light_sync_test
+  platoon_list:
+    - name: sync_platoon
+      inter_gap: 0.6
+      open_gap: 1.2
+      warm_up_speed: 30
+      platoon_max_speed: 16.67
+      destination: [300, 139.51, 0.3]
+      members:
+        - name: lv_sync
+          spawn_position: [100.0, 139.51, 0.3, 0, 0, 0]
+          behavior:
+            signal_sequence:
+              - {type: "horn", delay: 0}
+              - {type: "left_turn", delay: 2}
+        - name: fv_sync
+          spawn_position: [85.0, 139.51, 0.3, 0, 0, 0]
+
+  evaluation_points:
+    - position: 150.0
+      checks:
+        - name: horn_sync
+          type: float
+          max: 1.0
+          description: "鸣笛响应延迟(秒)"
+        - name: turn_light_sync
+          type: float
+          max: 1.0
+          description: "转向灯响应延迟(秒)"

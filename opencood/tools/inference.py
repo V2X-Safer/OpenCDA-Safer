@@ -56,7 +56,7 @@ def main():
 
     print('Dataset Building')
     opencood_dataset = build_dataset(hypes, visualize=True, train=False)
-    print(f"{len(opencood_dataset)} samples found.")
+    # print(f"{len(opencood_dataset)} samples found.")
     data_loader = DataLoader(opencood_dataset,
                              batch_size=1,
                              num_workers=16,
@@ -99,30 +99,34 @@ def main():
         for _ in range(50):
             vis_aabbs_gt.append(o3d.geometry.LineSet())
             vis_aabbs_pred.append(o3d.geometry.LineSet())
-
+    score_list = []
     for i, batch_data in tqdm(enumerate(data_loader)):
         # print(i)
         with torch.no_grad():
-            batch_data = train_utils.to_device(batch_data, device)
-            if opt.fusion_method == 'late':
-                pred_box_tensor, pred_score, gt_box_tensor = \
-                    inference_utils.inference_late_fusion(batch_data,
-                                                          model,
-                                                          opencood_dataset)
-            elif opt.fusion_method == 'early':
-                pred_box_tensor, pred_score, gt_box_tensor = \
-                    inference_utils.inference_early_fusion(batch_data,
-                                                           model,
-                                                           opencood_dataset)
-            elif opt.fusion_method == 'intermediate':
-                pred_box_tensor, pred_score, gt_box_tensor = \
-                    inference_utils.inference_intermediate_fusion(batch_data,
-                                                                  model,
-                                                                  opencood_dataset)
-            else:
-                raise NotImplementedError('Only early, late and intermediate'
-                                          'fusion is supported.')
-
+            try:
+                batch_data = train_utils.to_device(batch_data, device)
+                if opt.fusion_method == 'late':
+                    pred_box_tensor, pred_score, gt_box_tensor = \
+                        inference_utils.inference_late_fusion(batch_data,
+                                                            model,
+                                                            opencood_dataset)
+                elif opt.fusion_method == 'early':
+                    pred_box_tensor, pred_score, gt_box_tensor = \
+                        inference_utils.inference_early_fusion(batch_data,
+                                                            model,
+                                                            opencood_dataset)
+                elif opt.fusion_method == 'intermediate':
+                    pred_box_tensor, pred_score, gt_box_tensor = \
+                        inference_utils.inference_intermediate_fusion(batch_data,
+                                                                    model,
+                                                                    opencood_dataset)
+                else:
+                    raise NotImplementedError('Only early, late and intermediate'
+                                            'fusion is supported.')
+            except Exception as e:
+                continue
+                
+            # if pred_score: score_list.append((pred_score, len(pred_score)))
             eval_utils.caluclate_tp_fp(pred_box_tensor,
                                        pred_score,
                                        gt_box_tensor,

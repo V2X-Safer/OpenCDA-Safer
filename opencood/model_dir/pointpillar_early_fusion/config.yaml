@@ -136,6 +136,6 @@ preprocess:
     voxel_size: *id002
   cav_lidar_range: *id001
   core_method: SpVoxelPreprocessor
-root_dir: "opv2v_data_dumping/train"
-validate_dir: "opv2v_data_dumping/test_culver_city"
+root_dir: "data_dumping/train"
+validate_dir: "data_dumping/test_culver_city"
 yaml_parser: load_point_pillar_params

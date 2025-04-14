@@ -1,0 +1,104 @@
+description: |-
+  停车后领航车辆解散编队测试 - 符合T/CMAX 21005-2023标准5.3.2.1要求
+  测试编队在停车状态下由领航车辆解散的能力
+
+world:
+  sync_mode: true
+  client_port: 2000
+  fixed_delta_seconds: 0.05
+  seed: 13
+  weather:
+    sun_altitude_angle: 45
+    cloudiness: 30
+    precipitation: 0
+    precipitation_deposits: 0
+    wind_intensity: 0
+    fog_density: 0
+
+vehicle_base:
+  sensing:
+    perception:
+      camera:
+        visualize: 1  # 启用摄像头可视化以观察解散过程
+        num: 1
+        positions:
+          - [2.5, 0, 1.0, 0]  # 前视摄像头
+      lidar:
+        visualize: false
+    localization: &base_localize
+      gnss:
+        heading_direction_stddev: 0.1
+        speed_stddev: 0.1  # 提高精度要求
+      debug_helper:
+        show_animation: true  # 启用轨迹可视化
+        x_scale: 10.0
+        y_scale: 10.0
+  map_manager:
+    visualize: false
+    activate: false
+  behavior: &base_behavior
+    max_speed: 60
+    tailgate_speed: 70
+    overtake_allowed: false
+    collision_time_ahead: 1.5  # 增加安全距离
+
+platoon_base:
+  max_capacity: 2
+  inter_gap: 0.6
+  open_gap: 1.2
+  warm_up_speed: 30
+  disband_after_stop: true  # 启用停车后解散功能
+  disband_notification: true  # 启用解散通知功能
+
+scenario:
+  platoon_list:
+    - name: disband_platoon
+      inter_gap: 0.6
+      open_gap: 1.2
+      warm_up_speed: 30
+      platoon_max_speed: 16.67  # 60 km/h
+      leader_accel_threshold: 1.5
+      destination: [300, 139.51, 0.3]  # 300m长直道
+      disband_position: 200.0  # 行驶100m后到达x=200位置停车并解散
+      members:
+        - name: lv_disband
+          spawn_position: [100.0, 139.51, 0.3, 0, 0, 0]
+          behavior:
+            max_speed: 60
+            local_planner:
+              debug_trajectory: true
+              debug: true
+            notification:
+              visual: true  # 光学提醒
+              audio: true   # 声学提醒
+              haptic: true # 触觉提醒
+        - name: fv_disband
+          spawn_position: [85.0, 139.51, 0.3, 0, 0, 0]
+          behavior:
+            notification:
+              visual: true
+              audio: true
+              haptic: true
+            post_disband_behavior:
+              stop_and_park: true  # 解散后驻车
+
+  # 评估标准检查点
+  evaluation_points:
+    - position: 200.0
+      checks:
+        - name: platoon_disbanded
+          type: bool
+          expected: true
+          description: "编队是否已解散"
+        - name: fv_stopped
+          type: bool
+          expected: true
+          description: "跟随车辆是否已停车"
+        - name: notification_sent
+          type: bool
+          expected: true
+          description: "是否发出解散通知"
+        - name: response_time
+          type: float
+          max: 1.0  # 1秒内响应
+          description: "从解散指令到实际解散的响应时间"

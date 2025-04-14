@@ -193,7 +193,7 @@ def downsample_lidar_minimum(pcd_np_list):
     """
     minimum = np.Inf
 
-    for i in range(len(pcd_np_list)):
+    for i in range(len(pcd_np_list)):   
         num = pcd_np_list[i].shape[0]
         minimum = num if minimum > num else minimum
 

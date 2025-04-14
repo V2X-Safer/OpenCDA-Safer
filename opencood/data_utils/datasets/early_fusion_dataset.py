@@ -176,7 +176,7 @@ class EarlyFusionDataset(basedataset.BaseDataset):
 
         # filter lidar
         lidar_np = selected_cav_base['lidar_np']
-        lidar_np = shuffle_points(lidar_np)
+        # lidar_np = shuffle_points(lidar_np)
         # remove points that hit itself
         lidar_np = mask_ego_points(lidar_np)
         # project the lidar to ego space
@@ -210,6 +210,8 @@ class EarlyFusionDataset(basedataset.BaseDataset):
         batch = batch[0]
 
         output_dict = {}
+        if batch is None: 
+            return None
 
         for cav_id, cav_content in batch.items():
             output_dict.update({cav_id: {}})

@@ -1,0 +1,59 @@
+description: |-
+  路侧停车起步测试 - 符合T/CMAX 21005-2023标准5.3.6.1要求
+  测试编队从路侧停车位起步的能力
+
+world:
+  sync_mode: true
+  client_port: 2000
+  fixed_delta_seconds: 0.05
+  seed: 22
+  map: Town06
+
+vehicle_base:
+  sensing:
+    perception:
+      camera:
+        visualize: 1
+        num: 1
+        positions:
+          - [2.5, 0, 1.0, 0]
+    localization: &base_localize
+      gnss:
+        heading_direction_stddev: 0.1
+        speed_stddev: 0.1
+  behavior: &base_behavior
+    max_speed: 30
+    tailgate_speed: 40
+    overtake_allowed: false
+
+platoon_base:
+  max_capacity: 2
+  inter_gap: 0.6
+  open_gap: 1.2
+  warm_up_speed: 20
+
+scenario:
+  name: roadside_start_test
+  platoon_list:
+    - name: start_platoon
+      inter_gap: 0.6
+      open_gap: 1.2
+      warm_up_speed: 20
+      platoon_max_speed: 8.33
+      destination: [300, 139.51, 0.3]
+      start_position: [50.0, 135.51, 0.3]  # 路侧位置
+      members:
+        - name: lv_start
+          spawn_position: [50.0, 135.51, 0.3, 0, 0, 0]
+        - name: fv_start
+          spawn_position: [35.0, 135.51, 0.3, 0, 0, 0]
+
+  evaluation_points:
+    - position: 150.0
+      checks:
+        - name: formation_complete
+          type: bool
+          expected: true
+        - name: lane_keeping
+          type: bool
+          expected: true

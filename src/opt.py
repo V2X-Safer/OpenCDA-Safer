@@ -104,10 +104,17 @@ town = map
 map_helper = None
 
 
+# INFO: v2x
+v2x = False
+v2x_visualize = False
+model_dir = join(os.getcwd(), 'opencood', 'model_dir', 'pointpillar_early_fusion')
+fusion_method = ['no_fusion', 'early', 'intermediate', 'late']
+confidence_threshold = 0.3
+
 # INFO: scenario setting
 apply_ml = True
 xodr_file = None
-v2x = False
+platoon = False
 application = ['single']
 rsu = False
 
@@ -115,6 +122,7 @@ rsu = False
 # INFO: file directory
 test_dir = join(os.getcwd(), 'src', 'test_yaml')
 seed_dir = join(os.getcwd(), 'opencda', 'scenario_testing', 'config_yaml')
+standard_dir = join(os.getcwd(), 'src', 'newtest')
 sumo_dir = join(os.getcwd(), 'opencda', 'assets', map)
 xodr_dir = join(os.getcwd(), 'opencda', 'assets', map)
 picture_dir = join(os.getcwd(), 'src', 'log', 'view')

@@ -1,0 +1,59 @@
+description: |-
+  靠边停车测试 - 符合T/CMAX 21005-2023标准5.3.9.8要求
+  测试编队靠边停车的能力
+
+world:
+  sync_mode: true
+  client_port: 2000
+  fixed_delta_seconds: 0.05
+  seed: 36
+
+vehicle_base:
+  sensing:
+    perception:
+      camera:
+        visualize: 1
+        num: 1
+        positions:
+          - [2.5, 0, 1.0, 0]
+    localization: &base_localize
+      gnss:
+        heading_direction_stddev: 0.1
+        speed_stddev: 0.1
+  behavior: &base_behavior
+    max_speed: 40
+    tailgate_speed: 50
+    overtake_allowed: false
+
+platoon_base:
+  max_capacity: 2
+  inter_gap: 0.6
+  open_gap: 1.2
+  warm_up_speed: 20
+
+scenario:
+  name: pull_over_test
+  platoon_list:
+    - name: pullover_platoon
+      inter_gap: 0.6
+      open_gap: 1.2
+      warm_up_speed: 20
+      platoon_max_speed: 11.11
+      destination: [200, 135.51, 0.3]  # 靠边位置
+      members:
+        - name: lv_pullover
+          spawn_position: [100.0, 139.51, 0.3, 0, 0, 0]
+        - name: fv_pullover
+          spawn_position: [85.0, 139.51, 0.3, 0, 0, 0]
+
+  evaluation_points:
+    - position: 200.0
+      checks:
+        - name: parking_position
+          type: float
+          min: 0.0
+          max: 0.5
+          description: "距路边距离(米)"
+        - name: no_curb_hit
+          type: bool
+          expected: true

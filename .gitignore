@@ -158,3 +158,8 @@ scratch.py
 nohup.out
 PythonAPI
 .history
+*.pth
+*.pt
+*.png
+*.pcd
+*.npy

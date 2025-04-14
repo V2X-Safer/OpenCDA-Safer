@@ -108,7 +108,7 @@ class BaseDataset(Dataset):
             root_dir = params['root_dir']
         else:
             root_dir = params['validate_dir']
-
+        self.root_dir = root_dir
         if 'train_params' not in params or\
                 'max_cav' not in params['train_params']:
             self.max_cav = 7
@@ -195,6 +195,81 @@ class BaseDataset(Dataset):
         Abstract method, needs to be define by the children class.
         """
         pass
+    
+    def update(self):
+                # first load all paths of different scenarios
+        scenario_folders = sorted([os.path.join(self.root_dir, x)
+                                   for x in os.listdir(self.root_dir) if
+                                   os.path.isdir(os.path.join(self.root_dir, x))])
+        # Structure: {scenario_id : {cav_1 : {timestamp1 : {yaml: path,
+        # lidar: path, cameras:list of path}}}}
+        self.scenario_database = OrderedDict()
+        self.len_record = []
+
+        # loop over all scenarios
+        for (i, scenario_folder) in enumerate(scenario_folders):
+            self.scenario_database.update({i: OrderedDict()})
+
+            # at least 1 cav should show up
+            cav_list = sorted([x for x in os.listdir(scenario_folder)
+                               if os.path.isdir(
+                    os.path.join(scenario_folder, x))])
+            assert len(cav_list) > 0
+
+            # roadside unit data's id is always negative, so here we want to
+            # make sure they will be in the end of the list as they shouldn't
+            # be ego vehicle.
+            if int(cav_list[0]) < 0:
+                cav_list = cav_list[1:] + [cav_list[0]]
+
+            # loop over all CAV data
+            for (j, cav_id) in enumerate(cav_list):
+                if j > self.max_cav - 1:
+                    print('too many cavs')
+                    break
+                self.scenario_database[i][cav_id] = OrderedDict()
+
+                # save all yaml files to the dictionary
+                cav_path = os.path.join(scenario_folder, cav_id)
+
+                # use the frame number as key, the full path as the values
+                yaml_files = \
+                    sorted([os.path.join(cav_path, x)
+                            for x in os.listdir(cav_path) if
+                            x.endswith('.yaml') and 'additional' not in x])
+                timestamps = self.extract_timestamps(yaml_files)
+
+                for timestamp in timestamps:
+                    self.scenario_database[i][cav_id][timestamp] = \
+                        OrderedDict()
+
+                    yaml_file = os.path.join(cav_path,
+                                             timestamp + '.yaml')
+                    lidar_file = os.path.join(cav_path,
+                                              timestamp + '.pcd')
+                    camera_files = self.load_camera_files(cav_path, timestamp)
+
+                    self.scenario_database[i][cav_id][timestamp]['yaml'] = \
+                        yaml_file
+                    self.scenario_database[i][cav_id][timestamp]['lidar'] = \
+                        lidar_file
+                    self.scenario_database[i][cav_id][timestamp]['camera0'] = \
+                        camera_files
+                # Assume all cavs will have the same timestamps length. Thus
+                # we only need to calculate for the first vehicle in the
+                # scene.
+                if j == 0:
+                    # we regard the agent with the minimum id as the ego
+                    self.scenario_database[i][cav_id]['ego'] = True
+                    if not self.len_record:
+                        self.len_record.append(len(timestamps))
+                    else:
+                        prev_last = self.len_record[-1]
+                        self.len_record.append(prev_last + len(timestamps))
+                else:
+                    self.scenario_database[i][cav_id]['ego'] = False
+
+
 
     def retrieve_base_data(self, idx, cur_ego_pose_flag=True):
         """
@@ -217,6 +292,8 @@ class BaseDataset(Dataset):
             The dictionary contains loaded yaml params and lidar data for
             each cav.
         """
+        self.update()
+        
         # we loop the accumulated length list to see get the scenario index
         scenario_index = 0
         for i, ele in enumerate(self.len_record):

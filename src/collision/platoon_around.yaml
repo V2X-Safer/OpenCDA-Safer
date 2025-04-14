@@ -1,0 +1,72 @@
+description: |-
+  小曲率弯道跟随性能测试 - 符合T/CMAX 21005-2023标准5.3.3.4要求
+  测试编队在转弯半径小于300m的弯道中的跟随性能
+
+world:
+  sync_mode: true
+  client_port: 2000
+  fixed_delta_seconds: 0.05
+  seed: 18
+  weather:
+    sun_altitude_angle: 60  # 白天良好能见度
+    cloudiness: 10
+    precipitation: 0
+    fog_density: 0
+  map: Town06  # 使用包含小曲率弯道的地图
+
+vehicle_base:
+  sensing:
+    perception:
+      camera:
+        visualize: 1
+        num: 1
+        positions:
+          - [2.5, 0, 1.0, 0]  # 前视摄像头
+      lidar:
+        visualize: false
+    localization: &base_localize
+      gnss:
+        heading_direction_stddev: 0.05
+        speed_stddev: 0.05
+      debug_helper:
+        show_animation: true
+        x_scale: 10.0
+        y_scale: 10.0
+  map_manager:
+    visualize: true  # 启用地图可视化
+    activate: true
+  behavior: &base_behavior
+    max_speed: 30  # 最高测试速度30km/h
+    tailgate_speed: 35
+    overtake_allowed: false
+    collision_time_ahead: 2.0  # 弯道增加安全距离
+
+platoon_base:
+  max_capacity: 2
+  inter_gap: 0.6
+  open_gap: 1.2
+  warm_up_speed: 20  # 初始速度20-30km/h
+  curve_test: true  # 启用弯道测试模式
+
+scenario:
+  name: small_curve_test
+  platoon_list:
+    - name: curve_platoon
+      inter_gap: 0.6
+      open_gap: 1.2
+      warm_up_speed: 25  # 取中间值25km/h
+      platoon_max_speed: 8.33  # 30 km/h
+      leader_accel_threshold: 1.0  # 弯道温和加速
+      vehicle_load: empty  # 空载状态
+      curve_radius: 250  # 弯道半径<300m
+      destination: [150, 90, 0.3]  # 包含弯道的路径终点
+      members:
+        - name: lv_curve
+          spawn_position: [80.0, 133.5, 0.3, 0, 0, 0]  # 弯道起始点前
+          behavior:
+            local_planner:
+              debug_trajectory: true
+              debug: true
+            curve_speed: 25  # 固定弯道速度25km/h
+        - name: fv_curve
+          spawn_position: [65.0, 133.5, 0.3, 0, 0, 0]

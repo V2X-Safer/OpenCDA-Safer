@@ -1,0 +1,99 @@
+# 场景编号：JZ0101
+# 场景名称：静态组队
+# 场景说明：
+# - 领航车和跟随车静止在同一车道
+# - 纵向距离小于50m
+# - 两车满足V2V通信条件
+# - 进行静态组队测试
+# CARLA版本建议：0.9.13+，地图Town06，支持sync_mode与多车spawn
+
+world:
+  sync_mode: true  # 启用同步模式，保证传感器和环境同步更新
+  client_port: 2000
+  fixed_delta_seconds: 0.05  # 仿真步长
+  seed: 11  # 随机种子，确保可复现性
+
+vehicle_base:
+  sensing:
+    perception:
+      camera:
+        visualize: 0  # 摄像头可视化数量，0表示不显示
+        num: 0  # 摄像头数量
+        positions: []  # 摄像头位置
+      lidar:
+        visualize: false  # 是否可视化激光雷达
+    localization:
+      gnss:
+        heading_direction_stddev: 0.1  # 定位方向误差（度）
+        speed_stddev: 0.2  # 速度误差
+      debug_helper:
+        show_animation: false
+        x_scale: 10.0
+        y_scale: 10.0
+  map_manager:
+    visualize: false
+    activate: false
+  behavior:
+    max_speed: 70  # 最大速度 km/h
+    tailgate_speed: 80  # 贴车速度 km/h
+    overtake_allowed: false  # 禁止超车
+    collision_time_ahead: 1.1
+
+platoon_base:
+  max_capacity: 10  # 最大编队车辆数
+  inter_gap: 0.6  # 理想跟车时间间隔
+  open_gap: 1.2  # 编队开口间距
+  warm_up_speed: 30  # 进入编队需要的最低速度 km/h
+
+carla_traffic_manager:
+  global_distance: 4.0  # 车间最小安全距离 m
+  global_speed_perc: -50  # 所有背景车速度放大比例
+  ignore_lights_percentage: 0  # 是否无视红绿灯
+  vehicle_list:
+    # 背景车配置，保持原有内容不变
+    - spawn_position: [101.7194, 136.51, 0.3, 0, 0, 0]
+    - spawn_position: [57.7194, 143.51, 0.3, 0, 0, 0]
+    - spawn_position: [75.7194, 139.51, 0.3, 0, 0, 0]
+    - spawn_position: [161.7194, 139.51, 0.3, 0, 0, 0]
+    - spawn_position: [141.7194, 139.51, 0.3, 0, 0, 0]
+    - spawn_position: [150.7194, 139.51, 0.3, 0, 0, 0]
+
+scenario:
+  platoon_list:
+    - name: platoon1
+      inter_gap: 0.8  # 测试中编队跟车时间间隔
+      open_gap: 1.5  # 测试中编队变道空隙
+      warm_up_speed: 30
+      platoon_max_speed: 22.22  # 80km/h
+      leader_accel_threshold: 1.8  # 触发加速阈值
+      destination: [630, 141.39, 0.3]
+      members:
+        # 领航车
+        - name: cav1
+          spawn_position: [121.7194, 139.51, 0.3, 0, 0, 0]  # 更靠北
+        # 跟随车
+        - name: cav2
+          spawn_position: [111.7194, 139.51, 0.3, 0, 0, 0]  # 靠南
+
+  single_cav_list:
+    # 非编队单车，位于相邻车道，满足场景要求
+    - name: cav3
+      spawn_position: [47.7194, 143.51, 0.3, 0, 0, 0]
+      destination: [500.87, 145.39, 0]
+      sensing:
+        perception:
+          activate: true
+          camera:
+            visualize: 1
+            num: 1
+            positions:
+              - [2.5, 0, 1.0, 0]
+      v2x:
+        communication_range: 35
+      behavior:
+        max_speed: 100
+        tailgate_speed: 111
+        overtake_allowed: true
+        local_planner:
+          debug_trajectory: true
+          debug: false

@@ -1,12 +1,18 @@
 import copy
-from socket import timeout
+from venv import create
 import carla
+from torch import log_
 import torch.multiprocessing as mp
 import os
 import random
 import carla
+from opencda.core.application.platooning.platooning_manager import PlatooningManager
 from opencda.core.common.cav_world import CavWorld
+from opencda.core.common.rsu_manager import RSUManager
 from opencda.core.common.vehicle_manager import VehicleManager
+from opencda.customize.core import v2x_perception_manager
+from opencda.customize.core.v2x_data_dumper import V2XDataDumper
+from opencda.customize.core.v2x_perception_manager import V2XPerceptionManager
 from opencda.scenario_testing.utils import cosim_api, customized_map_api, sim_api
 from typing import Union
 from opencda.scenario_testing.utils.yaml_utils import add_current_time
@@ -66,20 +72,43 @@ class Scenario:
             self.scenario_manager.client.start_recorder(
                 opt.record_file,
                 opt.additional_recorder)
-        self.platoon_list = []
-        self.rsu_list = []
-        if opt.v2x:
+            
+        self.platoon_list: list[PlatooningManager] = []
+        self.single_cav_list: list[VehicleManager] = []
+        self.rsu_list: list[RSUManager] = []
+        
+        if opt.platoon:
             self.platoon_list = self.scenario_manager.create_platoon_manager(
                 map_helper=opt.map_helper,
                 data_dump=opt.data_dump)
 
-        self.single_cav_list: list[VehicleManager] =  self.scenario_manager.create_vehicle_manager(
+        self.single_cav_list =  self.scenario_manager.create_vehicle_manager(
                 application=opt.application,
                 map_helper=opt.map_helper,
                 data_dump=opt.data_dump)
+        
         if opt.rsu:
             self.rsu_list = self.scenario_manager.create_rsu_manager(opt.data_dump)
+        
+        # create v2x datadumper 
+        if opt.v2x:
+            for platoon in self.platoon_list:
+                for single_cav in platoon.vehicle_manager_list:
+                    single_cav.v2x_data_dumper = \
+                        self.create_vehicle_datadumper(single_cav)
+                    self.update_perception_manager(single_cav)
+                    
 
+            for single_cav in self.single_cav_list:
+                single_cav.v2x_data_dumper = \
+                    self.create_vehicle_datadumper(single_cav)
+                self.update_perception_manager(single_cav)
+
+            
+            for rsu in self.rsu_list:
+                rsu.v2x_data_dumper = self.create_rsu_datadumper(rsu)
+                self.update_perception_manager(single_cav)
+                
         # create carla traffic flow
         if not opt.sumo:
             self.traffic_manager, self.bg_veh_list  = \
@@ -89,12 +118,16 @@ class Scenario:
             OracleManager(self.scenario_manager.cav_world,
                                               script_name=opt.record_file,
                                               current_time=scenario_params['current_time'])
+            
         self.spectator = self.scenario_manager.world.get_spectator()
-        if opt.v2x:
+        if opt.platoon:
             self.spectator_vehicle = self.platoon_list[0].vehicle_manager_list[1].vehicle
         else:
             self.spectator_vehicle = self.single_cav_list[0].vehicle
+            
         self.operation = operation.Operation(self)
+        
+        # init mutator param  e.g. spanw actor saved in param
         self.init_mutator()
 
 
@@ -122,7 +155,7 @@ class Scenario:
         
         if opt.sumo_cfg:
             manager_args["sumo_file_parent_path"] = opt.sumo_cfg
-        if not opt.v2x:
+        if not opt.platoon:
             # platooning_manager won't create cav_world
             manager_args['cav_world'] = CavWorld(opt.apply_ml)
 
@@ -141,12 +174,36 @@ class Scenario:
                     carla.Transform(transform.location +
                         carla.Location(z=80),
                         carla.Rotation(pitch=-90)))
-
+                
+                # update v2x information
                 if opt.v2x:
                     for platoon in self.platoon_list:
-                        platoon.update_information()
-                        platoon.run_step()
-
+                        for single_cav in platoon.vehicle_manager_list:
+                            single_cav.v2x_data_dumper.run_step(
+                                single_cav.perception_manager,
+                                single_cav.localizer,
+                                single_cav.agent
+                            )
+                    
+                    for single_cav in self.single_cav_list:
+                        single_cav.v2x_data_dumper.run_step(
+                            single_cav.perception_manager,
+                            single_cav.localizer,
+                            single_cav.agent
+                        )
+                    
+                    for rsu in self.rsu_list:
+                        rsu.v2x_data_dumper.run_step(
+                            rsu.perception_manager,
+                            rsu.localizer,
+                            None
+                        )
+                    
+                # run step
+                for platoon in self.platoon_list:
+                    platoon.update_information()
+                    platoon.run_step()
+                                
                 for i, single_cav in enumerate(self.single_cav_list):
                     # this function should be added in wrapper
                     if single_cav.v2x_manager.in_platoon():
@@ -205,10 +262,10 @@ class Scenario:
         # platoon
         if scenario_params.get('scenario') \
             and scenario_params['scenario'].get('platoon_list') != []:
-            opt.v2x = True
+            opt.platoon = True
             opt.application = ['platooning']
         else:
-            opt.v2x = False
+            opt.platoon = False
             opt.application = ['single']
         
         # rsu
@@ -217,6 +274,40 @@ class Scenario:
             opt.rsu = True
         else:
             opt.rsu = False
+        
+        # v2x
+        opt.v2x = False
+        if scenario_params.get('scenario') and scenario_params['scenario'].get('single_cav_list'):
+            for cav in scenario_params['scenario']['single_cav_list']:
+                if cav.get('v2x') and cav['v2x'].get('communication_range', 0) > 0:
+                    opt.v2x = True
+                    break
+        
+        if scenario_params.get('vehicle_base') and \
+           scenario_params['vehicle_base'].get('sensing') and \
+           scenario_params['vehicle_base']['sensing'].get('perception') and \
+           scenario_params['vehicle_base']['sensing']['perception'].get('activate'):
+            
+            perception_config = scenario_params['vehicle_base']['sensing']['perception']
+            
+            if perception_config.get('lidar') and perception_config['lidar'].get('visualize'):
+                opt.v2x = True
+        
+        if opt.platoon and scenario_params.get('scenario') and scenario_params['scenario'].get('platoon_list'):
+            for platoon in scenario_params['scenario']['platoon_list']:
+                if platoon.get('v2x') and platoon['v2x'].get('communication_range', 0) > 0:
+                    opt.v2x = True
+                    break
+        
+        if opt.rsu and scenario_params.get('rsu_base') and \
+           scenario_params['rsu_base'].get('sensing') and \
+           scenario_params['rsu_base']['sensing'].get('perception') and \
+           scenario_params['rsu_base']['sensing']['perception'].get('activate'):
+            
+            rsu_perception_config = scenario_params['rsu_base']['sensing']['perception']
+            
+            if rsu_perception_config.get('lidar') and rsu_perception_config['lidar'].get('visualize'):
+                opt.v2x = True
         
         # traffic flow
         if scenario_params.get('sumo'):
@@ -237,8 +328,10 @@ class Scenario:
             opt.map_helper = None
             opt.town = opt.map
             
-        opt.record_file = f"{map}_{'cosim' if opt.sumo else 'carla'}.log"
+        opt.record_file = f"{opt.map}_{'cosim' if opt.sumo else 'carla'}.log"
         
+        if opt.v2x: log_process_info('v2x is enabled')
+
 
     # HACK: 应该在init之前变异字典
     def mutate(self, strategy=None):
@@ -302,7 +395,45 @@ class Scenario:
         for rsu in rsu_list:
             self.spawn_rsu(rsu)
             self.mutator['rsu_list'].append(rsu)
+    
+    def create_vehicle_datadumper(self, vehicle):
+        """
+        Initializes the data dumper for the vehicle.
 
+        Args:
+            vehicle (carla.Vehicle): The vehicle's parameters.
+        """
+        return V2XDataDumper(
+            vehicle.perception_manager,
+            vehicle.vehicle.id,
+            save_time=self.raw_param['current_time']
+        )
+    
+    def create_rsu_datadumper(self, rsu):
+        """
+        Initializes the data dumper for the RSU.
+
+        Args:
+            rsu (carla.RSU): The RSU's parameters.
+        """
+        return V2XDataDumper(
+            rsu.perception_manager,
+            rsu.rid,
+            save_time=self.raw_param['current_time']
+        )
+
+    def update_perception_manager(self, _object):
+        # get the original perception manager
+        origin_perception_manager = _object.perception_manager
+        
+        # update the perception manager
+        v2x_perception_manager = V2XPerceptionManager(opt)
+        v2x_perception_manager.__dict__.update(
+            origin_perception_manager.__dict__
+        )
+        _object.perception_manager = v2x_perception_manager
+        if origin_perception_manager.vehicle:
+            v2x_perception_manager._init_v2x_fusion(origin_perception_manager.vehicle)
 
     def spawn_vehicle(self, vehicle):
         """
@@ -367,7 +498,7 @@ def make_and_run(scenario_params):
     random.seed(seed)
     if not scenario_params.get('world'): scenario_params['world'] = {}
     # 变异opencda中的变量
-    if not opt.raw: 
+    if not opt.raw:
         scenario_params['world']['seed'] = seed
         is_mutated = Scenario.mutate_param(scenario_params)
 
@@ -426,7 +557,8 @@ def process_run(scenario_params):
 # for test
 if __name__ == '__main__':
     utils_.restart_carla()
-    file = '/home/test/V2X/OpenCDA/OpenCDA/src/collision/single_town05_cosim.yaml'
+    file = '/home/test/V2X/OpenCDA/OpenCDA/src/test_yaml/single_town06_carla.yaml'
+    # file = '/home/test/V2X/OpenCDA/OpenCDA/src/collision/platoon_around.yaml'
     param = utils_.get_param(file)
     param['map'] = utils_.get_map_name(file)
 

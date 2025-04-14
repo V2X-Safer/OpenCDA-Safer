@@ -13,7 +13,7 @@ from datetime import datetime
 
 import torch
 import torch.optim as optim
-import timm
+# import timm
 
 def load_saved_model(saved_path, model):
     """
@@ -234,7 +234,7 @@ def setup_lr_schedular(hypes, optimizer, n_iter_per_epoch):
 
     elif lr_schedule_config['core_method'] == 'cosineannealwarm':
         print('cosine annealing is chosen for lr scheduler')
-        from timm.scheduler.cosine_lr import CosineLRScheduler
+        # from timm.scheduler.cosine_lr import CosineLRScheduler
 
         num_steps = lr_schedule_config['epoches'] * n_iter_per_epoch
         warmup_lr = lr_schedule_config['warmup_lr']

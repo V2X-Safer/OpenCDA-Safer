@@ -1,0 +1,101 @@
+description: |-
+  编队匀速直行测试(80km/h空载) - 符合T/CMAX 21005-2023标准5.3.3.3要求
+  测试编队在空载条件下加速至80km/h并保持匀速直行的性能
+
+world:
+  sync_mode: true
+  client_port: 2000
+  fixed_delta_seconds: 0.05
+  seed: 17
+  weather:
+    sun_altitude_angle: 60  # 白天良好能见度
+    cloudiness: 10
+    precipitation: 0
+    fog_density: 0
+
+vehicle_base:
+  sensing:
+    perception:
+      camera:
+        visualize: 1
+        num: 1
+        positions:
+          - [2.5, 0, 1.0, 0]  # 前视摄像头
+      lidar:
+        visualize: false
+    localization: &base_localize
+      gnss:
+        heading_direction_stddev: 0.05
+        speed_stddev: 0.05
+      debug_helper:
+        show_animation: true
+        x_scale: 10.0
+        y_scale: 10.0
+  map_manager:
+    visualize: false
+    activate: false
+  behavior: &base_behavior
+    max_speed: 200  # 最高测试速度80km/h
+    tailgate_speed: 85
+    overtake_allowed: false
+    collision_time_ahead: 1.5
+
+platoon_base:
+  max_capacity: 2
+  inter_gap: 0.6
+  open_gap: 1.2
+  warm_up_speed: 30
+  constant_speed_test: true  # 启用匀速测试模式
+
+scenario:
+  name: constant_speed_test_80kmh_empty
+  platoon_list:
+    - name: constant_platoon_80_empty
+      inter_gap: 0.6
+      open_gap: 1.2
+      warm_up_speed: 30
+      platoon_max_speed: 22.22  # 80 km/h
+      leader_accel_threshold: 2.0
+      vehicle_load: empty  # 空载状态
+      destination: [600, 139.51, 0.3]  # 600m长直道(单车道)
+      speed_profile:
+        - {position: 20.0, speed: 0}   # 起始点
+        - {position: 100.0, speed: 200} # 加速至80km/h
+        - {position: 500.0, speed: 200} # 保持80km/h行驶400m(约18秒)
+      members:
+        - name: lv_constant_80_empty
+          spawn_position: [20.0, 139.51, 0.3, 0, 0, 0]  # 起点位置
+          behavior:
+            local_planner:
+              debug_trajectory: true
+              debug: true
+        - name: fv_constant_80_empty
+          spawn_position: [10.0, 139.51, 0.3, 0, 0, 0]  # 跟随车辆起始位置
+
+  evaluation_points:
+    - position: 120.0  # 加速完成检查点
+      checks:
+        - name: target_speed_reached
+          type: float
+          expected: 80.0
+          tolerance: 2.0  # 允许±2km/h误差
+    - position: 300.0  # 匀速阶段中点检查点
+      checks:
+        - name: speed_stability
+          type: float
+          expected: 80.0
+          tolerance: 1.0  # 更严格的匀速要求
+        - name: lateral_offset
+          type: float
+          max: 0.5  # 横向偏差<50cm
+        - name: longitudinal_distance
+          type: float
+          max: 25.0  # 纵向距离<25m
+        - name: duration_check
+          type: float
+          min: 5.0  # 确保已保持匀速至少5秒
+    - position: 500.0  # 测试结束点
+      checks:
+        - name: constant_speed_maintained
+          type: bool
+          expected: true

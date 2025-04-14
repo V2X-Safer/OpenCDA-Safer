@@ -1,0 +1,65 @@
+description: |-
+  跟车时前车切出测试 - 符合T/CMAX 21005-2023标准5.3.8.2要求
+  测试编队在前车切出时的反应能力
+
+world:
+  sync_mode: true
+  client_port: 2000
+  fixed_delta_seconds: 0.05
+  seed: 28
+
+vehicle_base:
+  sensing:
+    perception:
+      camera:
+        visualize: 1
+        num: 1
+        positions:
+          - [2.5, 0, 1.0, 0]
+    localization: &base_localize
+      gnss:
+        heading_direction_stddev: 0.1
+        speed_stddev: 0.1
+  behavior: &base_behavior
+    max_speed: 60
+    tailgate_speed: 70
+    overtake_allowed: false
+
+platoon_base:
+  max_capacity: 2
+  inter_gap: 0.6
+  open_gap: 1.2
+  warm_up_speed: 30
+
+scenario:
+  name: lead_vehicle_cut_out_test
+  platoon_list:
+    - name: cutout_platoon
+      inter_gap: 0.6
+      open_gap: 1.2
+      warm_up_speed: 30
+      platoon_max_speed: 16.67
+      destination: [400, 139.51, 0.3]
+      members:
+        - name: lv_cutout
+          spawn_position: [100.0, 139.51, 0.3, 0, 0, 0]
+        - name: fv_cutout
+          spawn_position: [85.0, 139.51, 0.3, 0, 0, 0]
+
+  single_cav_list:
+    - name: vt_lead
+      spawn_position: [120.0, 139.51, 0.3, 0, 0, 0]
+      destination: [400, 143.51, 0.3]  # 切出到相邻车道
+      behavior:
+        <<: *base_behavior
+        lane_change_position: 200.0
+
+  evaluation_points:
+    - position: 250.0
+      checks:
+        - name: lane_keeping
+          type: bool
+          expected: true
+        - name: speed_stability
+          type: bool
+          expected: true
