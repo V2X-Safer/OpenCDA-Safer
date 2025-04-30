@@ -11,15 +11,14 @@ world:
   fixed_delta_seconds: 0.05
   seed: 11 # seed for numpy and random
   weather:
-     sun_altitude_angle: 90 # 90 is the midday and -90 is the midnight
-     cloudiness: 50 # 0 is the clean sky and 100 is the thickest cloud
-     precipitation: 100 # rain, 100 is the heaviest rain
-     precipitation_deposits: 100 # Determines the creation of puddles. Values range from 0 to 100, being 0 none at all and 100 a road completely capped with water.
-     wind_intensity: 50 # it will influence the rain
-     fog_density: 50 # fog thickness, 100 is the largest
-     fog_distance: 50  # Fog start distance. Values range from 0 to infinite.
-     fog_falloff: 50 # Density of the fog (as in specific mass) from 0 to infinity. The bigger the value, the more dense and heavy it will be, and the fog will reach smaller heights
-     wetness: 100
+    cloudiness: 100 # 0 is the clean sky and 100 is the thickest cloud
+    precipitation: 100 # rain, 100 is the heaviest rain
+    precipitation_deposits: 100 # Determines the creation of puddles. Values range from 0 to 100, being 0 none at all and 100 a road completely capped with water.
+    wind_intensity: 100 # it will influence the rain
+    fog_density: 100 # fog thickness, 100 is the largest
+    fog_distance: 100  # Fog start distance. Values range from 0 to infinite.
+    fog_falloff: 100 # Density of the fog (as in specific mass) from 0 to infinity. The bigger the value, the more dense and heavy it will be, and the fog will reach smaller heights
+    wetness: 100
 
 # First define the basic parameters of the vehicles
 vehicle_base:
@@ -31,7 +30,7 @@ vehicle_base:
         # relative positions (x,y,z,yaw) of the camera. len(positions) should be equal to camera num
         positions: []
       lidar: # lidar sensor configuration, check CARLA sensor reference for more details
-        visualize: false
+        visualize: true
 
     localization: &base_localize
       gnss: # gnss sensor configuration
@@ -45,16 +44,16 @@ vehicle_base:
     visualize: false
     activate: false
   behavior: &base_behavior
-    max_speed: 100 # maximum speed, km/h
+    max_speed: 70 # maximum speed, km/h
     tailgate_speed: 80 # when a vehicles needs to be close to another vehicle asap
     overtake_allowed: false # whether overtake allowed, typically false for platoon leader
     collision_time_ahead: 1.1 # used for collision checking
 # define the platoon basic characteristics
 platoon_base:
   max_capacity: 10
-  inter_gap: 0.3 # desired time gap
+  inter_gap: 0.6 # desired time gap
   open_gap: 1.2 # open gap
-  warm_up_speed: 50 # required speed before cooperative merging
+  warm_up_speed: 30 # required speed before cooperative merging
 
 
 # define the background traffic control by carla
@@ -65,50 +64,25 @@ carla_traffic_manager:
   # and 20 represents 24 km/h
   global_speed_perc: -50
   ignore_lights_percentage: 0 # whether set the traffic ignore traffic lights
-  vehicle_list: 100  # a number or a list
-  # Used only when vehicle_list is a number.
-  # x_min, x_max, y_min, y_max, x_step, y_step
-  range:
-    - [ 50, 550, 135, 145, 50, 4, 100]
+  vehicle_list:
+    - spawn_position: [101.7194, 136.51, 0.3, 0, 0, 0]
+      vehicle_speed_perc: 50
+    - spawn_position: [57.7194, 143.51, 0.3, 0, 0, 0]
+      vehicle_speed_perc: 50
+    - spawn_position: [75.7194, 139.51, 0.3, 0, 0, 0]
+      vehicle_speed_perc: 50
+    - spawn_position: [45.7194, 139.51, 0.3, 0, 0, 0]
+      vehicle_speed_perc: 500
+    - spawn_position: [150.7194, 139.51, 0.3, 0, 0, 0]
+      vehicle_speed_perc: 100
+
 
 # define scenario. In this scenario, a 4-vehicle platoon already exists.
 scenario:
-  platoon_list:
-    - name: platoon1
-      inter_gap: 1.0     # 缩短理想跟车时间间隔(原0.6秒)
-      open_gap: 1.2      # 缩小变道间隙需求(原1.2秒)
-      warm_up_speed: 50  # 提升协同变道触发速度
-      platoon_max_speed: 22.22  # 与max_speed对应(80km/h)
-      leader_accel_threshold: 1.8
-      destination: [580, 141.39, 0.3]
-      members: # the first one is regarded as leader by default
-        - name: cav1ggVG
-          spawn_position: [121.7194, 139.51, 0.3, 0, 0, 0] # x, y, z, roll, yaw, pitch
-          sensing:
-            perception:
-              activate: true
-              camera:
-                visualize: 1 # how many camera images need to be visualized. 0 means no visualization for camera
-                num: 1 # how many cameras are mounted on the vehicle. Maximum 3(frontal, left and right cameras)
-                # relative positions (x,y,z,yaw) of the camera. len(positions) should be equal to camera num
-                positions:
-                  - [2.5, 0, 1.0, 0]
-          behavior:
-            local_planner:
-              debug_trajectory: false
-              debug: false
-        - name: cav2
-          spawn_position: [116.7194, 139.51, 0.3, 0, 0, 0]
-        - name: cav3
-          spawn_position: [111.7194, 139.51, 0.3, 0, 0, 0]
-        - name: cav4
-          spawn_position: [106.7194, 139.51, 0.3, 0, 0, 0]
-
-
   single_cav_list: # this is for merging vehicle or single cav without v2x
     - name: cav1
       spawn_position: [47.7194, 143.51, 0.3, 0, 0, 0]
-      destination: [606.87, 145.39, 0]
+      destination: [500.87, 145.39, 0]
       sensing:
         perception:
           activate: true

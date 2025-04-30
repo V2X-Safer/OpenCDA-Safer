@@ -1,0 +1,39 @@
+# Standard 5.3.5.1 Braking Test (Empty Load)
+# Map: Town06 | Road ID: 8 | Lane: 1
+
+world:
+  sync_mode: true
+  client_port: 2000
+  fixed_delta_seconds: 0.05
+  town: "Town06"
+
+vehicle_base:
+  sensing:
+    perception:
+      activate: true
+      lidar:
+        type: "hdl64"
+        range: 100.0
+
+scenario:
+  range: &road_range
+    x: [50, 550]  # 有效测试范围
+    y: [139.0, 140.0]
+    z: [0, 1]
+
+  platoon_list:
+    - name: platoon_5.3.5.1
+      destination: [550.0, 139.51, 0.3]  # 终点坐标
+      behavior:
+        emergency_decel: 3.0  # 减速度(m/s²)
+      members:
+        - name: leader
+          spawn_position: [100.0, 139.51, 0.3, 0, 0, 0]
+        - name: follower
+          spawn_position: [80.0, 139.51, 0.3, 0, 0, 0]
+
+  test_sequence:
+    - action: platoon_braking_test
+      params:
+        init_speed: 40  # 初始速度(km/h)
+        decel_distance: 200  # 制动触发位置(距起点200m)

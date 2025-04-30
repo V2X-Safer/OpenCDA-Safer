@@ -1,7 +1,5 @@
 import copy
-from venv import create
 import carla
-from torch import log_
 import torch.multiprocessing as mp
 import os
 import random
@@ -10,7 +8,6 @@ from opencda.core.application.platooning.platooning_manager import PlatooningMan
 from opencda.core.common.cav_world import CavWorld
 from opencda.core.common.rsu_manager import RSUManager
 from opencda.core.common.vehicle_manager import VehicleManager
-from opencda.customize.core import v2x_perception_manager
 from opencda.customize.core.v2x_data_dumper import V2XDataDumper
 from opencda.customize.core.v2x_perception_manager import V2XPerceptionManager
 from opencda.scenario_testing.utils import cosim_api, customized_map_api, sim_api
@@ -165,7 +162,8 @@ class Scenario:
 
     def run(self):
         ''' 运行场景 '''
-        try: 
+        log_process_debug('run scenario')
+        try:
             while True:
                 self.scenario_manager.cav_world.tick()
                 self.scenario_manager.tick()
@@ -220,6 +218,7 @@ class Scenario:
             log_exception('run failed')
 
         finally:
+            log_process_debug('run success')
             score, is_collision = self.oracle_manager.evaluate()
 
             try:
@@ -309,14 +308,14 @@ class Scenario:
             if rsu_perception_config.get('lidar') and rsu_perception_config['lidar'].get('visualize'):
                 opt.v2x = True
         
-        # traffic flow
+        # traffic flowa
         if scenario_params.get('sumo'):
             opt.sumo = True
             opt.sumo_cfg = opt.sumo_dir
             scenario_params['sumo']['gui'] = False
         else:
             opt.sumo = False
-            opt.sumo_cfg = None
+            opt.sumo_cfg = None 
         
         # map
         if 'Town' not in opt.map:
@@ -336,14 +335,17 @@ class Scenario:
     # HACK: 应该在init之前变异字典
     def mutate(self, strategy=None):
         if strategy == 'weather':
-            self.operation.set_weather()
             log_process_info('mutate weather')
+            self.operation.set_weather()
+            self.scenario_manager.world.tick()
         elif strategy == 'traffic' and not opt.sumo:
-            self.operation.set_traffic()
             log_process_info('mutate traffic')
+            self.operation.set_traffic()
+            self.scenario_manager.world.tick()
         elif strategy == 'actor' and not opt.sumo:
-            self.operation.set_actor()
             log_process_info('mutate actor')
+            self.operation.set_actor()
+            self.scenario_manager.world.tick()
         else:
             self.mutate(random.choice(opt.mutate_world_strategy))
 
@@ -505,8 +507,9 @@ def make_and_run(scenario_params):
     scenario = Scenario(scenario_params)
 
     # 变异carla中的变量 确保两者取其一变异
-    if not opt.raw and not is_mutated: 
+    if not opt.raw and not is_mutated:
         scenario.mutate()
+    if not opt.sumo: scenario.mutate('actor')
 
     score, is_collision = scenario.run()
     return (score, is_collision, copy.deepcopy(scenario.get_raw_param()))
@@ -539,7 +542,7 @@ def process_run(scenario_params):
     p = ctx.Process(target=_wrapped_make_and_run_pipe, args=(scenario_params, child_conn))
     p.start()
     
-    timeout = 3 * 60
+    timeout = 5 * 60
     p.join(timeout)
     
     if p.is_alive():
@@ -557,7 +560,7 @@ def process_run(scenario_params):
 # for test
 if __name__ == '__main__':
     utils_.restart_carla()
-    file = '/home/test/V2X/OpenCDA/OpenCDA/src/test_yaml/single_town06_carla.yaml'
+    file = '/home/test/V2X/OpenCDA/OpenCDA/src/test_yaml/platoon_joining_town06_carla.yaml'
     # file = '/home/test/V2X/OpenCDA/OpenCDA/src/collision/platoon_around.yaml'
     param = utils_.get_param(file)
     param['map'] = utils_.get_map_name(file)

@@ -11,6 +11,7 @@ from opencda.scenario_testing.utils.yaml_utils import add_current_time
 from opencda.core.application.platooning.platooning_manager import PlatooningManager
 
 import opt
+from src.log import log_process_debug
 
 class Operation:
     ''' 封装一层 carla 和 opencda 的接口'''
@@ -159,11 +160,15 @@ class Operation:
     def set_actor(self, spawn_point: carla.Transform = None, vehicle_strategy: str = 'random', walker_strategy: str = 'random'):
         ''' 设置actor '''
         if not spawn_point: spawn_point = self.get_spawn_point()
-        return self.spawn_vehicle(spawn_point=spawn_point, strategy=vehicle_strategy)
-        if random.choice([True, False]):
-            return self.spawn_vehicle(spawn_point=spawn_point, strategy=vehicle_strategy)
+        return self.spawn_walker(spawn_point=spawn_point, strategy=vehicle_strategy)
+        spawn = random.choice([self.spawn_vehicle, self.spawn_walker])
+        # spawn = self.spawn_walker
+        result = spawn(spawn_point=spawn_point)
+        if spawn == self.spawn_vehicle:
+            log_process_debug(f'spawn vehicle at {spawn_point.location.x}, {spawn_point.location.y}, {spawn_point.location.z}')
         else:
-            return self.spawn_walker(spawn_point=spawn_point, strategy=walker_strategy)
+            log_process_debug(f'spawn walker at {spawn_point.location.x}, {spawn_point.location.y}, {spawn_point.location.z}')
+        return result
 
 
     def spawn_vehicle(self,
@@ -193,10 +198,15 @@ class Operation:
         # 尝试生成车辆
         vehicle = self.scenario_manager.world.try_spawn_actor(vehicle_bp, spawn_point)
 
-        
-        while not vehicle:
-            spawn_point = self.get_spawn_point()
+        max_try = 100
+        ind = 0
+        while not vehicle and max_try > ind:
+            spawn_point = self.get_spawn_point(opt.near_distance + ind)
             vehicle = self.scenario_manager.world.try_spawn_actor(vehicle_bp, spawn_point)
+            ind += 1
+        if not vehicle:
+            log_process_debug(f'try to spawn vehicle failed after {max_try} times')
+            return None
         self.scenario_manager.world.tick()
         self.actor_list.append(vehicle)
         
@@ -318,6 +328,7 @@ class Operation:
                      walker_bp: carla.libcarla.ActorBlueprint = None,
                      is_append: bool = True,
                      strategy: str = 'random'):
+        log_process_debug(f'spawn walker with strategy: {strategy}')
 
         if spawn_point is None:
             spawn_point = self.get_spawn_point()
@@ -326,11 +337,17 @@ class Operation:
         
         walker = self.scenario_manager.world.try_spawn_actor(walker_bp, spawn_point)
         
-        while not walker:
-            spawn_point = self.get_spawn_point()
+        max_try = 100
+        ind = 0
+        while not walker and max_try > ind:
+            spawn_point = self.get_spawn_point(opt.near_distance + ind)
             walker = self.scenario_manager.world.try_spawn_actor(walker_bp, spawn_point)
+            ind += 1
+        if not walker:
+            log_process_debug(f'try to spawn walker failed after {max_try} times')
+            return None
         self.actor_list.append(walker)
-            
+
         walker_controller_bp = None
         walker_controller = None
 
@@ -339,9 +356,9 @@ class Operation:
         else:
             walker_controller_bp = random.choice([self.blueprints.find('controller.ai.walker'), None])
 
-        # AI control
-        if walker_controller_bp:
-            walker_controller = self.scenario_manager.world.spawn_actor(walker_controller_bp, spawn_point, walker)
+        # BUG: walker_controller.go_to_location error
+        if walker_controller_bp and False:
+            walker_controller = self.scenario_manager.world.spawn_actor(walker_controller_bp, carla.Transform(), walker)
             self.actor_list.append(walker_controller)
             # world.tick()
             walker_controller.start()
@@ -356,7 +373,7 @@ class Operation:
                 if not destination else destination
             )
             walker_controller.set_max_speed(current_speed)
-                
+            
         # linear go straight to destination
         else:
             forward_vec = spawn_point.rotation.get_forward_vector()

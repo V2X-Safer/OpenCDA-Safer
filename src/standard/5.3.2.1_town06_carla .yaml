@@ -1,0 +1,44 @@
+# 多车协同感知测试场景配置(5.3.2.1) - Town06地图 
+world:
+  sync_mode: true
+  client_port: 2000
+  fixed_delta_seconds: 0.05
+  town: Town06
+  weather:
+    sun_altitude_angle: 45  # 调整光照角度增强感知难度 
+    cloudiness: 30
+    precipitation: 0
+    wetness: 0
+    fog_density: 20  # 添加轻度雾效 
+
+vehicle_base:
+  sensing:
+    perception:
+      activate: true
+      camera:
+        num: 4  # 多视角配置 
+        positions:
+          - [2.5, 0, 1.0, 0]    # 前视 
+          - [0.0, 0.3, 1.8, 100]  # 右侧 
+          - [0.0, -0.3, 1.8, -100] # 左侧 
+          - [-2.0, 0.0, 1.5, 180] # 后视 
+    localization:
+      activate: true
+      debug_helper:
+        show_animation: false
+
+scenario:
+  single_cav_list:
+    - name: cav_1
+      spawn_position: [47.7194, 139.51, 0.3, 0, 0, 0]  # 使用已有坐标 
+      destination: [480, 145.51, 0.3]  # 延长路线 
+      v2x:
+        communication_range: 150  # 扩展通信范围 
+    - name: cav_2
+      spawn_position: [-5.51, 110.24, 0.3, 0, 90, 0]  # 交叉方向车辆 
+      destination: [360, 263, 0.3]
+
+carla_traffic_manager:
+  random: true  # 随机车辆颜色和模型 
+  range:
+    - [50, 250, 135, 145, 50, 4, 30]  # 主测试区域 

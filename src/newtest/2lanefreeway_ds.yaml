@@ -1,0 +1,74 @@
+description: |-
+  Copyright 2023 <Generated Configuration>
+  Content: Platoon of 3 vehicles passing through 3 intersections on 2lanefree map
+
+# Global simulation settings 
+world:
+  sync_mode: true
+  client_port: 2000
+  fixed_delta_seconds: 0.05
+  seed: 12345
+  weather:
+    sun_altitude_angle: 45.0
+    cloudiness: 30.0
+    precipitation: 0.0
+    wetness: 0.0
+
+# Base vehicle configuration 
+vehicle_base:
+  sensing:
+    perception:
+      camera:
+        visualize: 0
+        num: 0
+        positions: []
+      lidar:
+        visualize: false
+    localization:
+      activate: true
+  map_manager:
+    activate: false
+  behavior:
+    max_speed: 90  # km/h 
+    tailgate_speed: 100
+    overtake_allowed: false
+    collision_time_ahead: 1.5
+    sample_resolution: 4.0
+
+# Platoon configuration 
+platoon_base:
+  max_capacity: 3
+  inter_gap: 0.8  # desired time gap
+  open_gap: 1.5
+  warm_up_speed: 60
+
+# Background traffic settings 
+carla_traffic_manager:
+  global_distance: 3.5
+  global_speed_perc: -200
+  vehicle_list:
+    - spawn_position: [-200, 8.3, 0.3, 0, 0, 0]
+    - spawn_position: [-150, 4.8, 0.3, 0, 0, 0]
+    - spawn_position: [-100, 8.3, 0.3, 0, 0, 0]
+
+# Scenario definition 
+scenario:
+  platoon_list:
+    - name: platoon1
+      destination: [1000.0, 8.3, 0.3]  # Final destination after 3 intersections
+      members:
+        - name: leader
+          spawn_position: [-500, 8.3, 0.3, 0, 0, 0]
+          behavior:
+            local_planner:
+              debug_trajectory: true
+        - name: follower1
+          spawn_position: [-510, 8.3, 0.3, 0, 0, 0]
+        - name: follower2
+          spawn_position: [-520, 8.3, 0.3, 0, 0, 0]
+
+  # Define 3 waypoints representing the 3 intersections
+  waypoints:
+    - [100.0, 8.3, 0.3]  # First intersection
+    - [400.0, 8.3, 0.3]  # Second intersection
+    - [700.0, 8.3, 0.3]  # Third intersection

@@ -31,7 +31,7 @@ class LiveEarlyFusionDataset(EarlyFusionDataset):
     visualize : bool
         是否可视化
     train : bool
-        是否为训练模式（此类通常用于推理，因此默认为False）
+        是否为训练模式
     """
     def __init__(self, params, vehicle_id, visualize=True, train=False):
         super().__init__(params, visualize, train)

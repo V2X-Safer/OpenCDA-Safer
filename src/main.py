@@ -1,9 +1,10 @@
 import copy
+import os
 
 import Scenario_
 import src.utils_ as utils_
 import opt
-from log import timestamp, log_process_info, log_process_critical, log_process_debug, set_console_log_level
+from log import timestamp, log_process_info, log_process_critical, set_console_log_level
 import logging
 
 def main():
@@ -14,7 +15,7 @@ def main():
     # fuzz
     utils_.restart_carla()
     for index, file in enumerate(utils_.get_seed(opt.standard_dir)):
-        # if index < 2: continue
+        # if index < 6 : continue
         seed_param = utils_.get_param(file)
         map_name = utils_.get_map_name(file)
         seed_param['map'] = map_name
@@ -28,7 +29,9 @@ def main():
         while dcycle_cnt < opt.dcount:
             bscenario_param_list = []
             bcycle_cnt = 0
-            if success_param: test_param = copy.deepcopy(success_param)
+            if success_param: 
+                test_param = copy.deepcopy(success_param)
+                break
             while bcycle_cnt < opt.bcount:
                 log_process_info('='*20 + f' Deep Cycle: {dcycle_cnt} Broad Cycle: {bcycle_cnt} ' + '='*20)
                 score = 0
@@ -60,13 +63,15 @@ def main():
                 params['is_collision'] = is_collision
                 params = {'score': score, 'is_collision': is_collision, **params}
                 bscenario_param_list.append((params, score))
-                utils_.save_param(params, 
+                utils_.save_param(params,
                                   map_name,
                                   dcycle_cnt,
                                   bcycle_cnt,
                                   timestamp,
                                   'platoon' if opt.platoon else 'single',
-                                  'cosim' if opt.sumo else 'carla')
+                                  'cosim' if opt.sumo else 'carla',
+                                  filename=f'{os.path.basename(file)}_d{dcycle_cnt}_b{bcycle_cnt}.yaml',
+                                  is_collision=is_collision)
                 
                 if is_collision: break
                 bcycle_cnt += 1

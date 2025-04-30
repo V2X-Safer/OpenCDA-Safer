@@ -1,0 +1,90 @@
+已知有一个场景生成任务，具体说明如下：
+根据已有场景配置格式和描述信息，自动生成新的种子场景配置文件。
+在你的知识库中提取prompt.yaml.txt文件中的信息，它是OpenCDA配置文件的示例文件，
+你要做的是，根据场景要求从Town06.xodr中提取符合要求的路段，并根据xodr文件提取对应路段的坐标范围，注意理解xodr文件需要你查看xodr规范。
+在路段的坐标范围内，设置车辆的起点和终点，并将其转换为YAML格式的配置文件。
+需要修改的核心信息包括：
+
+carla_traffic_manager:
+    sync_mode: true                     # Must match world.sync_mode
+    global_distance: 5                  # Minimum distance between vehicles
+    global_speed_perc: -50              # Speed percentage relative to limit
+    set_osm_mode: true                  # Whether to enable OSM mode
+    auto_lane_change: false             # Whether to allow automatic lane changes
+    ignore_lights_percentage: 0         # Percentage of vehicles ignoring lights
+    random: true                        # Whether to randomize vehicle appearance
+    vehicle_list: ~                     # List of background vehicles
+    # Used when vehicle_list is ~
+    # Format: [x_min, x_max, y_min, y_max, x_step, y_step, vehicle_num]
+    range:
+        - [50, 250, 135, 145, 50, 4, 30]
+
+rsu_base:
+    sensing:
+        perception:
+        activate: false  
+        camera:
+            visualize: 4              
+            num: 4    
+            positions:                  
+            - [2.5, 0, 1.0, 0]    
+            - [0.0, 0.3, 1.8, 100]
+            - [0.0, -0.3, 1.8, -100] 
+            - [-2.0, 0.0, 1.5, 180] 
+        lidar:          
+            visualize: true              
+            channels: 32                 
+            range: 120                    
+            points_per_second: 1000000    # Points generated per second
+            rotation_frequency: 20        # Rotation frequency in Hz
+            upper_fov: 2                  # Upper field of view angle
+            lower_fov: -25                # Lower field of view angle
+            dropoff_general_rate: 0.3     # General dropoff rate
+            dropoff_intensity_limit: 0.7  # Intensity limit for dropoff
+            dropoff_zero_intensity: 0.4   # Zero intensity dropoff
+            noise_stddev: 0.02            # Standard deviation of noise
+        localization:
+        activate: true                  # Whether to use sensor-based localization
+        dt: ${world.fixed_delta_seconds} # Time step for Kalman filter
+        gnss:                           # GNSS sensor configuration
+            noise_alt_stddev: 0.05        # Altitude noise standard deviation
+            noise_lat_stddev: 3e-6        # Latitude noise standard deviation
+            noise_lon_stddev: 3e-6        # Longitude noise standard deviation
+
+single_cav_list:
+    - name: cav1
+        spawn_position: [47.7194, 139.51, 0.3, 0, 0, 0] 
+        destination: [480, 145.51, 0.3] 
+        spawn_special: []               
+        v2x:                            
+        enabled: true                
+        communication_range: 45       
+        behavior:                       
+        ignore_traffic_light: false
+        max_speed: 60                 
+        local_planner:               
+            debug_trajectory: false    
+            debug: false                
+            enable_prediction: false   
+            prediction_model: 'ConstantVelocityHeading'
+
+platoon_list:
+    - name: platoon1                  
+        destination: [1000.372955, 8.3, 0.3]
+        members:                     
+        - name: cav1           
+            spawn_position: [-350, 8.3, 0.3, 0, 0, 0]
+            perception:     
+            camera:
+                visualize: 1          
+                num: 1                  # Number of cameras
+                positions:              # Camera positions
+                - [2.5, 0, 1.0, 0]    # Front camera
+            lidar:
+                visualize: true         # Visualize LiDAR
+            behavior:                   # Behavior settings
+            local_planner:            # Local planner settings
+                debug_trajectory: true  # Debug trajectory
+                debug: false            # Debug planner
+
+请根据上述信息，生成满足要求的YAML格式的场景配置文件。

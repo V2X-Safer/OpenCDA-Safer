@@ -1,0 +1,46 @@
+# 标准5.3.2.2编队测试配置 - Town06直道
+world:
+  sync_mode: true
+  town: Town06
+  fixed_delta_seconds: 0.05
+  weather:
+    sun_altitude_angle: 70  # 确保传感器稳定性
+    fog_density: 0
+
+vehicle_base: &base_vehicle
+  sensing:
+    perception:
+      camera:
+        num: 1
+        positions: [[2.5, 0, 1.0, 0]]  # 前视摄像头
+  behavior:
+    max_speed: 80  # km/h
+    collision_time_ahead: 1.5
+
+platoon_base: &base_platoon
+  max_capacity: 5
+  inter_gap: 0.6  # 标准跟车时距
+  warm_up_speed: 30  # 编队模式触发速度(km/h)
+
+scenario:
+  platoon_list:
+    - name: test_platoon
+      <<: *base_platoon
+      destination: [550.0, 139.51, 0.3]  # 终点(距起点500m)
+      members:
+        - name: leader
+          spawn_position: [50.0, 139.51, 0.3, 0, 0, 0]  # 起点
+          behavior:
+            local_planner:
+              debug_trajectory: true
+        - name: follower1
+          spawn_position: [45.0, 139.51, 0.3, 0, 0, 0]  # 纵向间距5m
+        - name: follower2
+          spawn_position: [40.0, 139.51, 0.3, 0, 0, 0]
+
+  single_cav_list: []  # 无独立车辆
+
+carla_traffic_manager:
+  global_distance: 5.0
+  global_speed_perc: -100  # 背景车速度60km/h
+  vehicle_list: []  # 禁用随机车辆

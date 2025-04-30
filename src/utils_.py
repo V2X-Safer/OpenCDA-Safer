@@ -91,7 +91,7 @@ def restart_carla():
     except Exception as e:
         log_process_critical(f"Error while managing Carla: {e}")
 
-def save_param(param: dict, map_name: str, dcycle: int, bcycle: int, timestamp: str, app_type: str = 'single', sim_type: str = 'carla'):
+def save_param(param: dict, map_name: str, dcycle: int, bcycle: int, timestamp: str, app_type: str = 'single', sim_type: str = 'carla', filename: str = '', is_collision: bool = False):
     """
     将参数字典保存为YAML文件。
     
@@ -111,6 +111,10 @@ def save_param(param: dict, map_name: str, dcycle: int, bcycle: int, timestamp: 
         应用类型，如 'single' 或 'platoon'
     sim_type : str
         仿真类型，如 'carla' 或 'cosim'
+    filename : str
+        自定义文件名（如果提供）
+    is_collision : bool
+        是否发生碰撞
     """
     try:
         folder_name = f"{map_name}_{app_type}_{sim_type}"
@@ -119,13 +123,16 @@ def save_param(param: dict, map_name: str, dcycle: int, bcycle: int, timestamp: 
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
         
-        file_name = f"d{dcycle}_b{bcycle}.yaml"
+        file_name = f"d{dcycle}_b{bcycle}.yaml" if filename == '' else filename
         save_path = os.path.join(dir_path, file_name)
+        if is_collision: 
+            success_path = os.path.join(opt.success_dir, 'collision_' + file_name)
         
         param['current_time'] = timestamp
         
         conf = OmegaConf.create(param)
         OmegaConf.save(conf, save_path)
+        if is_collision: OmegaConf.save(conf, success_path)
         
         log_process_info(f"successfully save param to {save_path}")
         

@@ -4,7 +4,7 @@ import sys
 
 
 # INFO: fuzz setting
-dcount = 5
+dcount = 20
 bcount = 5
 near_distance = 20
 spawn_min_distance = 40
@@ -14,13 +14,14 @@ vehicle_max_distance = 40
 acc_threshold = 5
 brake_threshold = 3
 angular_threshold = 0.5
-mutate_world_strategy = ['weather', 'actor', 'traffic']
+mutate_world_strategy = ['weather', 'actor'] #+ ['traffic']
 mutate_param_strategy = ['noise', 'platoon']
 all_strategy = mutate_param_strategy + mutate_world_strategy
 walker_strategy = ['random']
 walker_speed_min = 1
 walker_speed_max = 2
 platoon_joined_penalty = 10
+run_time = 7 * 60
 
 # 车队车辆间距参数（单位：秒）- 更合理的参数范围
 inter_gap_min = 0.2  # 最小跟车间隙时间
@@ -122,11 +123,14 @@ rsu = False
 # INFO: file directory
 test_dir = join(os.getcwd(), 'src', 'test_yaml')
 seed_dir = join(os.getcwd(), 'opencda', 'scenario_testing', 'config_yaml')
-standard_dir = join(os.getcwd(), 'src', 'newtest')
+standard_dir = join(os.getcwd(), 'src', 'standard')
 sumo_dir = join(os.getcwd(), 'opencda', 'assets', map)
 xodr_dir = join(os.getcwd(), 'opencda', 'assets', map)
 picture_dir = join(os.getcwd(), 'src', 'log', 'view')
 param_dir = join(os.getcwd(), 'src', 'log', 'param')
+collision_dir = join(os.getcwd(), 'src', 'collision')
+success_dir = join(os.getcwd(), 'src', 'log', 'success')
+
 
 
 # INFO: traffic flow setting

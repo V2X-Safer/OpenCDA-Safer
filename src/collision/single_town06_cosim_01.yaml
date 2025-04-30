@@ -1,8 +1,8 @@
 description: |-
   Copyright 2021 <UCLA Mobility Lab>
   Author: Runsheng Xu <rxx3386@ucla.edu>
-  Content: This is the scenario testing configuration file for single vehicle full-stack system in town06 with co-simulation
-
+  Content: This is the scenario testing configuration file for platooning joining and cooperative merge
+           at the Town06 using  CARLA only.
 
 
 world:
@@ -11,58 +11,107 @@ world:
   fixed_delta_seconds: 0.05
   seed: 11 # seed for numpy and random
   weather:
-    sun_altitude_angle: 0 # 90 is the midday and -90 is the midnight
-    cloudiness: 0 # 0 is the clean sky and 100 is the thickest cloud
-    precipitation: 100 # rain, 100 is the heaviest rain
-    precipitation_deposits: 100 # Determines the creation of puddles. Values range from 0 to 100, being 0 none at all and 100 a road completely capped with water.
-    wind_intensity: 0 # it will influence the rain
-    fog_density: 0 # fog thickness, 100 is the largest
-    fog_distance: 0  # Fog start distance. Values range from 0 to infinite.
-    fog_falloff: 0 # Density of the fog (as in specific mass) from 0 to infinity. The bigger the value, the more dense and heavy it will be, and the fog will reach smaller heights
-    wetness: 100
+     sun_altitude_angle: 45 # 90 is the midday and -90 is the midnight
+  #   cloudiness: 50 # 0 is the clean sky and 100 is the thickest cloud
+  #   precipitation: 50 # rain, 100 is the heaviest rain
+  #   precipitation_deposits: 0 # Determines the creation of puddles. Values range from 0 to 100, being 0 none at all and 100 a road completely capped with water.
+  #   wind_intensity: 0 # it will influence the rain
+  #   fog_density: 50 # fog thickness, 100 is the largest
+  #   fog_distance: 0  # Fog start distance. Values range from 0 to infinite.
+  #   fog_falloff: 50 # Density of the fog (as in specific mass) from 0 to infinity. The bigger the value, the more dense and heavy it will be, and the fog will reach smaller heights
+  #   wetness: 0
 
 # First define the basic parameters of the vehicles
 vehicle_base:
   sensing:
     perception:
-      activate: true # when not activated, objects positions will be retrieved from server directly
       camera:
-        visualize: 4 # how many camera images need to be visualized. 0 means no visualization for camera
-        num: 4 # how many cameras are mounted on the vehicle. Maximum 3(frontal, left and right cameras)
+        visualize: 0 # how many camera images need to be visualized. 0 means no visualization for camera
+        num: 0 # how many cameras are mounted on the vehicle. Maximum 3(frontal, left and right cameras)
         # relative positions (x,y,z,yaw) of the camera. len(positions) should be equal to camera num
-        positions:
-          - [2.5, 0, 1.0, 0]
-          - [0.0, 0.3, 1.8, 100]
-          - [0.0, -0.3, 1.8, -100]
-          - [-2.0, 0.0, 1.5, 180]
+        positions: []
+      lidar: # lidar sensor configuration, check CARLA sensor reference for more details
+        visualize: false
 
-    localization:
-      activate: true # when not activated, ego position will be retrieved from server directly
+    localization: &base_localize
+      gnss: # gnss sensor configuration
+        heading_direction_stddev: 0.1 # degree
+        speed_stddev: 0.2
       debug_helper:
-        show_animation: true # whether to show real-time trajectory plotting
+        show_animation: false # whether to show real-time trajectory plotting
+        x_scale: 10.0 # used to multiply with the x coordinate to make the error on x axis clearer
+        y_scale: 10.0 # used to multiply with the y coordinate to make the error on y axis clearer
+  map_manager:
+    visualize: false
+    activate: false
+  behavior: &base_behavior
+    max_speed: 70 # maximum speed, km/h
+    tailgate_speed: 80 # when a vehicles needs to be close to another vehicle asap
+    overtake_allowed: false # whether overtake allowed, typically false for platoon leader
+    collision_time_ahead: 1.1 # used for collision checking
+# define the platoon basic characteristics
+platoon_base:
+  max_capacity: 10
+  inter_gap: 0.6 # desired time gap
+  open_gap: 1.2 # open gap
+  warm_up_speed: 30 # required speed before cooperative merging
 
-  behavior:
-    ignore_traffic_light: false # whether to ignore traffic light
-    collision_time_ahead: 2.0 # used for collision checking
 
-# define sumo simulation setting for traffic generation
-sumo:
-  port: ~
-  host: ~
-  gui: true
-  client_order: 1
-  step_length: ${world.fixed_delta_seconds}
+# define the background traffic control by carla
+carla_traffic_manager:
+  global_distance: 4.0 # the minimum distance in meters that vehicles have to keep with the rest
+  # Sets the difference the vehicle's intended speed and its current speed limit.
+  #  Carla default speed is 30 km/h, so -100 represents 60 km/h,
+  # and 20 represents 24 km/h
+  global_speed_perc: -50
+  ignore_lights_percentage: 0 # whether set the traffic ignore traffic lights
+  vehicle_list: 100  # a number or a list
+  # Used only when vehicle_list is a number.
+  # x_min, x_max, y_min, y_max, x_step, y_step
+  range:
+    - [70,350,135,155,5,2, 50]
 
-
-# define scenario. In this scenario, only a single CAV will be spawned
+# define scenario. In this scenario, a 4-vehicle platoon already exists.
 scenario:
-  single_cav_list: # this is for merging vehicle or single cav without v2x
-    - name: cav1
-      spawn_position: [47.7194, 139.51, 0.3, 0, 0, 0]
-      destination: [280, 145.51, 0.3]
-      v2x:
-        communication_range: 45
+  platoon_list:
+    - name: platoon1
+      inter_gap: 0.8     # 缩短理想跟车时间间隔(原0.6秒)
+      open_gap: 1.5      # 缩小变道间隙需求(原1.2秒)
+      warm_up_speed: 30  # 提升协同变道触发速度
+      platoon_max_speed: 22.22  # 与max_speed对应(80km/h)
+      leader_accel_threshold: 1.8
+      destination: [630, 141.39, 0.3]
+      members: # the first one is regarded as leader by default
+        - name: cav1
+          spawn_position: [131.7194, 139.51, 0.3, 0, 0, 0] # x, y, z, roll, yaw, pitch
+          sensing:
+            perception:
+              activate: true
+              camera:
+                visualize: 1 # how many camera images need to be visualized. 0 means no visualization for camera
+                num: 1 # how many cameras are mounted on the vehicle. Maximum 3(frontal, left and right cameras)
+                # relative positions (x,y,z,yaw) of the camera. len(positions) should be equal to camera num
+                positions:
+                  - [2.5, 0, 1.0, 0]
+          behavior:
+            local_planner:
+              debug_trajectory: false
+              debug: false
+        - name: cav2
+          spawn_position: [116.7194, 139.51, 0.3, 0, 0, 0]
+        - name: cav3
+          spawn_position: [101.7194, 139.51, 0.3, 0, 0, 0]
+        - name: cav4
+          spawn_position: [86.7194, 139.51, 0.3, 0, 0, 0]
+
+      communication_range: 35
       behavior:
+        <<: *base_behavior
+        max_speed: 100 # maximum speed, km/h
+        tailgate_speed: 111
+        overtake_allowed: true
         local_planner:
-          debug_trajectory: false
+          debug_trajectory: true
           debug: false
+
+

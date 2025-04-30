@@ -1,0 +1,76 @@
+# OpenCDA Scenario Configuration for Town06
+# Parallel driving test with platoon and target vehicle
+
+world:
+  sync_mode: true
+  client_port: 2000
+  fixed_delta_seconds: 0.05
+  seed: 11
+  town: Town06
+
+vehicle_base:
+  sensing:
+    perception:
+      camera:
+        visualize: 0
+        num: 0
+        positions: []
+      lidar:
+        visualize: false
+  localization: &base_localize
+    gnss:
+      heading_direction_stddev: 0.1
+      speed_stddev: 0.2
+    debug_helper:
+      show_animation: false
+      x_scale: 10.0
+      y_scale: 10.0
+  behavior: &base_behavior
+    max_speed: 50.0  # m/s (72 km/h)
+    tailgate_speed: 22.0
+    overtake_allowed: false
+    collision_time_ahead: 1.1
+
+platoon_base:
+  max_capacity: 10
+  inter_gap: 0.6
+  open_gap: 1.2
+  warm_up_speed: 50.0  # Initial speed (m/s)
+
+carla_traffic_manager:
+  sync_mode: true
+  global_distance: 4.0
+  global_speed_perc: -50
+  set_osm_mode: true
+  auto_lane_change: false
+  ignore_lights_percentage: 0
+  random: false
+  vehicle_range:  # Straight road section bounds
+    x_min: 100.0
+    x_max: 700.0
+    y_min: 135.0
+    y_max: 145.0
+
+scenario:
+  platoon_list:
+    - name: test_platoon
+      inter_gap: 0.8
+      open_gap: 1.5
+      warm_up_speed: 50.0
+      platoon_max_speed: 50.0  # Target speed (72 km/h)
+      leader_accel_threshold: 1.8
+      destination: [500.0, 139.51, 0.3]  # 200m parallel distance
+      members:
+        - name: platoon_lead
+          spawn_position: [120.0, 139.51, 0.3, 0, 0, 0]
+        - name: platoon_member2
+          spawn_position: [100.0, 139.51, 0.3, 0, 0, 0]
+
+  single_cav_list:
+    - name: target_vehicle
+      spawn_position: [100.0, 143.51, 0.3, 0, 0, 0]  # Adjacent lane
+      destination: [500.0, 143.51, 0.3]  # Parallel movement
+      behavior:
+        <<: *base_behavior
+        max_speed: 50.0  # Same speed as platoon
+        overtake_allowed: false

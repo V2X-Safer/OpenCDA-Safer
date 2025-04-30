@@ -1,0 +1,46 @@
+#description: |
+#  Copyright 2021 <UCLA Mobility Lab>
+#  Content: Configuration for 5.3.3.3 straight road platooning test in Town06
+
+world:
+  sync_mode: true
+  client_port: 2000
+  fixed_delta_seconds: 0.05
+
+vehicle_base:
+  sensing:
+    perception:
+      camera:
+        visualize: 0
+        num: 0
+        positions: []
+      lidar:
+        visualize: false
+  behavior: &base_behavior
+    max_speed: 70
+    tailgate_speed: 80
+    overtake_allowed: false
+    collision_time_ahead: 1.1
+
+platoon_base:
+  max_capacity: 10
+  inter_gap: 0.6
+  open_gap: 1.2
+  warm_up_speed: 30
+
+scenario:
+  platoon_list:
+    - name: platoon_test
+      inter_gap: 0.6
+      platoon_max_speed: 22.22  # 80km/h
+      destination: [630, 139.51, 0.3]
+      members:
+        - name: leader
+          spawn_position: [100.0, 139.51, 0.3, 0, 0, 0]
+          behavior:
+            local_planner:
+              debug_trajectory: false
+        - name: follower1
+          spawn_position: [90.0, 139.51, 0.3, 0, 0, 0]
+        - name: follower2
+          spawn_position: [80.0, 139.51, 0.3, 0, 0, 0] 

@@ -1,0 +1,48 @@
+# Standard 5.3.4.1 Horn & Turn Signal Sync Test
+# Map: Town06 | Road ID: 8 | Lane: 1 (center lane)
+
+world:
+  sync_mode: true
+  client_port: 2000
+  fixed_delta_seconds: 0.05
+  town: "Town06"
+
+carla_traffic_manager:
+  auto_lane_change: false
+  ignore_lights_percentage: 0
+  global_speed_perc: 100  # 禁用TM速度干扰
+
+platoon_base:
+  max_capacity: 3
+  inter_gap: 0.6  # 时间间隔(s)
+  warm_up_speed: 30  # 初始速度(km/h)
+
+scenario:
+  range: &road_range
+    x: [50, 600]  # 有效测试范围（避开起点50m）
+    y: [139.0, 140.0]
+    z: [0, 1]
+
+  platoon_list:
+    - name: platoon_5.3.4.1
+      destination: [600.0, 139.51, 0.3]  # 终点坐标
+      behavior:
+        local_planner:
+          min_distance: 10.0
+      members:
+        - name: leader
+          spawn_position: [100.0, 139.51, 0.3, 0, 0, 0]
+          sensors:
+            lidar:
+              type: "hdl64"
+              range: 100.0
+        - name: follower1
+          spawn_position: [90.0, 139.51, 0.3, 0, 0, 0]
+        - name: follower2
+          spawn_position: [80.0, 139.51, 0.3, 0, 0, 0]
+
+  test_sequence:  # 专用测试流程
+    - action: platoon_horn_sync
+      params:
+        leader_delay: 0.5  # 领航车鸣笛后跟随车响应时间(s)
+        turn_signal_delay: 0.8  # 转向灯同步延迟(s)

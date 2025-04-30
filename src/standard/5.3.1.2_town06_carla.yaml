@@ -1,0 +1,52 @@
+# 动态组队测试场景配置(5.3.1.2) - Town06地图
+world:
+  sync_mode: true
+  client_port: 2000
+  fixed_delta_seconds: 0.05
+  weather:
+    sun_altitude_angle: 70
+    cloudiness: 0
+    precipitation: 0
+    wetness: 0
+    fog_density: 0
+
+vehicle_base:
+  sensing:
+    perception:
+      activate: true
+      camera:
+        num: 4
+        positions:
+          - [2.5, 0, 1.0, 0]
+          - [0.0, 0.3, 1.8, 100]
+          - [0.0, -0.3, 1.8, -100]
+          - [-2.0, 0.0, 1.5, 180]
+    localization:
+      activate: true
+  v2x:
+    enable: true
+    range: 100
+  behavior:
+    max_speed: 30  # ≥30km/h
+    ignore_traffic_light: false
+    collision_time_ahead: 2.0
+
+scenario:
+  single_cav_list:
+    - name: leader
+      spawn_position: [47.7194, 139.51, 0.3, 0, 0, 0]  # 采用坐标
+      destination: [480, 145.51, 0.3]
+      v2x:
+        communication_range: 50  # 满足50m通信要求
+    - name: follower
+      spawn_position: [30.0, 139.51, 0.3, 0, 0, 0]  # 纵向间距17.7m(<50m)
+      destination: [460, 145.51, 0.3]
+      behavior:
+        local_planner:
+          debug_trajectory: true  # 开启轨迹调试
+
+carla_traffic_manager:
+  sync_mode: true
+  vehicle_list: []  # 清空干扰车辆
+  range:
+    - [30, 500, 135, 150, 50, 4, 30]  # 覆盖测试区域

@@ -1,0 +1,301 @@
+description: |-
+  Content: Comprehensive OpenCDA configuration reference combining elements from various scenarios
+
+# Define CARLA simulation settings
+world:
+  sync_mode: true                     # Synchronize CARLA server and client
+  client_host: localhost              # CARLA server host
+  client_port: 2000                   # CARLA server port
+  fixed_delta_seconds: 0.05           # Simulation time step in seconds
+  seed: 11                            # Seed for numpy and random for reproducibility
+  weather:                            # Environmental conditions
+    sun_altitude_angle: 85            # 90 is midday, -90 is midnight
+    cloudiness: 10                    # 0 is clear sky, 100 is thickest cloud
+    precipitation: 0                  # Rain amount, 100 is heaviest
+    precipitation_deposits: 0         # Puddle formation, 0 none, 100 roads capped with water
+    wind_intensity: 10                # Wind strength affecting rain
+    fog_density: 0                    # Fog thickness, 100 is maximum
+    fog_distance: 0                   # Fog start distance, 0 to infinite
+    fog_falloff: 0                    # Fog density falloff rate
+    wetness: 0                        # Road wetness level
+
+# Define RSU (Roadside Unit) base parameters
+rsu_base:
+  sensing:
+    perception:
+      activate: false                 # Whether to use sensor-based perception
+      camera:
+        visualize: 4                  # Number of camera feeds to visualize
+        num: 4                        # Number of cameras mounted
+        positions:                    # Relative positions [x,y,z,yaw] of cameras
+          - [2.5, 0, 1.0, 0]          # Front camera
+          - [0.0, 0.3, 1.8, 100]      # Right camera
+          - [0.0, -0.3, 1.8, -100]    # Left camera
+          - [-2.0, 0.0, 1.5, 180]     # Rear camera
+      lidar:                          # LiDAR sensor configuration
+        visualize: true               # Whether to visualize LiDAR point cloud
+        channels: 32                  # Number of channels
+        range: 120                    # Detection range in meters
+        points_per_second: 1000000    # Points generated per second
+        rotation_frequency: 20        # Rotation frequency in Hz
+        upper_fov: 2                  # Upper field of view angle
+        lower_fov: -25                # Lower field of view angle
+        dropoff_general_rate: 0.3     # General dropoff rate
+        dropoff_intensity_limit: 0.7  # Intensity limit for dropoff
+        dropoff_zero_intensity: 0.4   # Zero intensity dropoff
+        noise_stddev: 0.02            # Standard deviation of noise
+    localization:
+      activate: true                  # Whether to use sensor-based localization
+      dt: ${world.fixed_delta_seconds} # Time step for Kalman filter
+      gnss:                           # GNSS sensor configuration
+        noise_alt_stddev: 0.05        # Altitude noise standard deviation
+        noise_lat_stddev: 3e-6        # Latitude noise standard deviation
+        noise_lon_stddev: 3e-6        # Longitude noise standard deviation
+
+# Basic parameters for vehicles
+vehicle_base:
+  sensing:                            # Sensing capabilities
+    perception:
+      activate: true                  # Whether to use sensor-based perception
+      camera:
+        visualize: 0                  # Number of camera feeds to visualize
+        num: 4                        # Number of cameras mounted
+        positions:                    # Relative positions [x,y,z,yaw] of cameras
+          - [2.5, 0, 1.0, 0]          # Front camera
+          - [0.0, 0.3, 1.8, 100]      # Right camera
+          - [0.0, -0.3, 1.8, -100]    # Left camera
+          - [-2.0, 0.0, 1.5, 180]     # Rear camera
+      lidar:                          # LiDAR sensor configuration
+        visualize: false              # Whether to visualize LiDAR point cloud
+        channels: 32                  # Number of channels
+        range: 100                    # Detection range in meters
+        points_per_second: 1000000    # Points generated per second
+        rotation_frequency: 20        # Rotation frequency in Hz
+        upper_fov: 2                  # Upper field of view angle
+        lower_fov: -25                # Lower field of view angle
+        dropoff_general_rate: 0.3     # General dropoff rate
+        dropoff_intensity_limit: 0.7  # Intensity limit for dropoff
+        dropoff_zero_intensity: 0.4   # Zero intensity dropoff
+        noise_stddev: 0.02            # Standard deviation of noise
+    localization:
+      activate: true                  # Whether to use sensor-based localization
+      dt: ${world.fixed_delta_seconds} # Time step for Kalman filter
+      gnss:                           # GNSS sensor configuration
+        noise_alt_stddev: 0.000005    # Altitude noise standard deviation
+        noise_lat_stddev: 0.000005    # Latitude noise standard deviation
+        noise_lon_stddev: 0.000005    # Longitude noise standard deviation
+        update_frequency: 20.0        # GNSS update frequency
+      imu:                            # IMU sensor configuration
+        noise_accel_stddev_x: 0.001   # X-axis acceleration noise std
+        noise_accel_stddev_y: 0.001   # Y-axis acceleration noise std
+        noise_accel_stddev_z: 0.015   # Z-axis acceleration noise std
+        noise_gyro_stddev_x: 0.001    # X-axis gyroscope noise std
+        noise_gyro_stddev_y: 0.001    # Y-axis gyroscope noise std
+        noise_gyro_stddev_z: 0.001    # Z-axis gyroscope noise std
+        update_frequency: 50.0        # IMU update frequency
+      debug_helper:                   # Debug visualization options
+        show_animation: false         # Whether to show real-time trajectory
+        x_scale: 1.0                  # X-axis scaling for visualization
+        y_scale: 100.0                # Y-axis scaling for visualization
+
+  map_manager:                        # Map management settings
+    pixels_per_meter: 8               # Rasterization map resolution
+    raster_size: [512, 512]           # Rasterized map size in pixels
+    lane_sample_resolution: 0.1       # Lane sampling resolution in meters
+    visualize: false                  # Whether to visualize rasterization map
+    activate: false                   # Whether to activate map manager
+
+  safety_manager:                     # Safety monitoring settings
+    print_message: true               # Whether to print hazard messages
+    visualize: false                  # Whether to visualize safety status
+    collision_sensor:                 # Collision detection configuration
+      activate: true                  # Whether to activate collision detection
+      history_size: 30                # History buffer size
+      col_thresh: 1                   # Collision threshold
+    stuck_dector:                     # Stuck vehicle detection
+      activate: true                  # Whether to activate stuck detection
+      duration: 5.0                   # Time threshold for stuck detection
+      speed_threshold: 0.1            # Speed threshold for stuck detection
+      len_thresh: 500                 # Length threshold for stuck detection
+      speed_thresh: 0.5               # Speed threshold for stuck detection
+    offroad_dector:                   # Off-road detection
+      activate: true                  # Whether to activate off-road detection
+    traffic_light_detector:           # Traffic light violation detection
+      activate: true                  # Whether to activate traffic light detection
+      light_dist_thresh: 20           # Distance threshold for traffic light detection
+
+  behavior:                           # Vehicle behavior settings
+    max_speed: 30                     # Maximum speed in km/h
+    tailgate_speed: 34                # Speed when tailgating is needed
+    speed_lim_dist: 6                 # Speed limit distance reduction
+    speed_decrease: 10                # Speed decrease in car following mode
+    safety_time: 5                    # TTC safety threshold for speed decrease
+    emergency_param: 0.4              # Emergency stop threshold
+    ignore_traffic_light: false       # Whether to ignore traffic lights
+    overtake_allowed: true            # Whether overtaking is allowed
+    collision_time_ahead: 2.0         # Time ahead for collision checking
+    overtake_counter_recover: 35      # Steps before allowing another overtake
+    sample_resolution: 4.5            # Waypoint spacing in meters
+    local_planner:                    # Trajectory planning settings
+      buffer_size: 12                 # Waypoint buffer size
+      trajectory_update_freq: 20      # Trajectory update frequency
+      waypoint_update_freq: 9         # Waypoint update frequency
+      min_dist: 3                     # Minimum distance to pop waypoints
+      trajectory_dt: 0.05             # Time step for trajectory sampling
+      debug: false                    # Whether to debug waypoints
+      debug_trajectory: false         # Whether to debug trajectory
+      enable_prediction: false        # Whether to enable prediction
+      prediction_model: 'ConstantVelocityHeading' # Prediction model type
+
+  controller:                         # Vehicle control settings
+    type: 'pid'                       # Controller type
+    args:                             # Controller arguments
+      lat:                            # Lateral control parameters
+        k_p: 0.75                     # Proportional gain
+        k_d: 0.02                     # Derivative gain
+        k_i: 0.4                      # Integral gain
+      lon:                            # Longitudinal control parameters
+        k_p: 0.37                     # Proportional gain
+        k_d: 0.024                    # Derivative gain
+        k_i: 0.032                    # Integral gain
+      dynamic: false                  # Whether to use dynamic PID
+      dt: ${world.fixed_delta_seconds} # Time step for control
+      max_brake: 1.0                  # Maximum brake value
+      max_throttle: 1.0               # Maximum throttle value
+      max_steering: 0.3               # Maximum steering value
+    lateral_pid:                      # Alternative lateral PID parameters
+      k_p: 0.5                        # Proportional gain
+      k_i: 0.2                        # Integral gain
+      k_d: 0.1                        # Derivative gain
+    longitudinal_pid:                 # Alternative longitudinal PID parameters
+      k_p: 0.5                        # Proportional gain
+      k_i: 0.2                        # Integral gain
+      k_d: 0.1                        # Derivative gain
+  
+  v2x:                                # Vehicle-to-everything communication
+    enabled: true                     # Whether V2X is enabled
+    communication_range: 45           # Communication range in meters
+    loc_noise: 0.0                    # Location noise level
+    yaw_noise: 0.0                    # Yaw angle noise level
+    speed_noise: 0.0                  # Speed noise level
+    lag: 0                            # Communication lag
+
+# CARLA traffic manager configuration
+carla_traffic_manager:
+  sync_mode: true                     # Must match world.sync_mode
+  global_distance: 5                  # Minimum distance between vehicles
+  global_speed_perc: -50              # Speed percentage relative to limit
+  set_osm_mode: true                  # Whether to enable OSM mode
+  auto_lane_change: false             # Whether to allow automatic lane changes
+  ignore_lights_percentage: 0         # Percentage of vehicles ignoring lights
+  random: true                        # Whether to randomize vehicle appearance
+  vehicle_list: ~                     # List of background vehicles
+  # Used when vehicle_list is ~
+  # Format: [x_min, x_max, y_min, y_max, x_step, y_step, vehicle_num]
+  range:
+    - [50, 250, 135, 145, 50, 4, 30]
+
+# ScenarioRunner parameters (for openscenario integration)
+scenario_runner:
+  town: town06                        # CARLA town map
+  scenario: Overtake_1                # Scenario name
+  num_actors: 5                       # Number of actors including ego
+  configFile: './opencda/scenario_testing/scenarios/Overtake.xml' # Scenario XML
+  additionalScenario: './opencda/scenario_testing/scenarios/overtake.py' # Scenario script
+  timeout: 10                         # Timeout in seconds
+  debug: false                        # Whether to enable debug mode
+  sync: false                         # Whether to sync with CARLA server
+  repetitions: 1                      # Number of repetitions
+  agent: null                         # Agent configuration
+  openscenario: null                  # OpenSCENARIO configuration
+  route: null                         # Route configuration
+  reloadWorld: false                  # Whether to reload world
+  waitForEgo: false                   # Whether to wait for ego vehicle
+  trafficManagerPort: '8000'          # Traffic manager port
+  trafficManagerSeed: '0'             # Traffic manager seed
+  record: ''                          # Recording file
+  agentConfig: ''                     # Agent configuration file
+  file: false                         # Whether to use file mode
+  json: false                         # Whether to output JSON
+  junit: false                        # Whether to output JUnit format
+  list: false                         # Whether to list scenarios
+  penscenarioparams: null             # Scenario parameters
+  output: false                       # Whether to output results
+  outputDir: ''                       # Output directory
+  randomize: false                    # Whether to randomize scenario
+
+# Platoon basic characteristics
+platoon_base:
+  max_capacity: 10                    # Maximum platoon size
+  inter_gap: 0.6                      # Desired time gap between vehicles
+  open_gap: 1.5                       # Open gap for merging
+  warm_up_speed: 55                   # Required speed before merging
+  change_leader_speed: true           # Whether to vary leader speed
+  leader_speeds_profile: [20, 25]     # Different speeds for leader
+  stage_duration: 40                  # Duration of each speed stage
+  catch_up_speed_gain: 5              # Speed gain for catching up
+
+# Scenario definition
+scenario:
+  # RSU list configuration
+  rsu_list:
+    - name: default_rsu               # RSU name
+      spawn_position: [0.0, 0.0, 3.0] # RSU position [x, y, z]
+      id: -1                          # RSU ID (negative to distinguish from vehicles)
+
+  # Single CAV list configuration
+  single_cav_list:
+    - name: cav1                      # Vehicle name
+      spawn_position: [47.7194, 139.51, 0.3, 0, 0, 0] # Spawn position [x, y, z, roll, yaw, pitch]
+      destination: [480, 145.51, 0.3] # Destination [x, y, z]
+      spawn_special: []               # Special spawn parameters
+      v2x:                            # V2X communication settings
+        enabled: true                 # Whether V2X is enabled
+        communication_range: 45       # Communication range
+      behavior:                       # Behavior settings
+        ignore_traffic_light: false   # Whether to ignore traffic lights
+        max_speed: 60                 # Maximum speed
+        local_planner:                # Local planner settings
+          debug_trajectory: false     # Whether to debug trajectory
+          debug: false                # Whether to debug planner
+          enable_prediction: false    # Whether to enable prediction
+          prediction_model: 'ConstantVelocityHeading' # Prediction model
+  
+  # Platoon configuration (example from platoon_joining)
+  platoon_list:
+    - name: platoon1                  # Platoon name
+      destination: [1000.372955, 8.3, 0.3] # Platoon destination
+      members:                        # Platoon members (first is leader)
+        - name: cav1                  # First vehicle (leader)
+          spawn_position: [-350, 8.3, 0.3, 0, 0, 0] # Position
+          perception:                 # Perception settings
+            camera:
+              visualize: 1            # Visualize camera
+              num: 1                  # Number of cameras
+              positions:              # Camera positions
+                - [2.5, 0, 1.0, 0]    # Front camera
+            lidar:
+              visualize: true         # Visualize LiDAR
+          behavior:                   # Behavior settings
+            local_planner:            # Local planner settings
+              debug_trajectory: true  # Debug trajectory
+              debug: false            # Debug planner
+        - name: cav2                  # Second vehicle
+          spawn_position: [-360, 8.3, 0.3, 0, 0, 0] # Position
+        - name: cav3                  # Third vehicle
+          spawn_position: [-370, 8.3, 0.3, 0, 0, 0] # Position
+        - name: cav4                  # Fourth vehicle
+          spawn_position: [-380, 8.3, 0.3, 0, 0, 0] # Position
+
+# Scenario mutator configuration
+mutator:
+  actor:                              # Actor mutation settings
+    vehicle_list: []                  # List of vehicles to mutate
+    walker_list: []                   # List of pedestrians to mutate
+    rsu_list: []                      # List of RSUs to mutate
+  noise: 'pass'                       # Noise mutation (pass = no noise)
+  disturbance:                        # Scenario disturbance settings
+    enable: false                     # Whether to enable disturbances
+    target: []                        # Disturbance target IDs
+    type: 'random'                    # Disturbance type (random/programmed/periodic)
+    parameters: {}                    # Disturbance parameters

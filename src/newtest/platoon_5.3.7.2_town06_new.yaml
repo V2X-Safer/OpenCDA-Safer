@@ -1,0 +1,100 @@
+description: |-
+  相邻车道车辆切入测试（强制插入） - 符合T/CMAX 21005-2023标准5.3.7.2要求
+  测试目标车辆完全插入领航车与跟随车之间的场景
+
+world:
+  sync_mode: true
+  client_port: 2000
+  fixed_delta_seconds: 0.05
+  seed: 42
+  weather:
+    sun_altitude_angle: 60
+    cloudiness: 10
+    precipitation: 0
+    fog_density: 0
+
+vehicle_base:
+  sensing:
+    perception:
+      camera:
+        visualize: 1
+        num: 2
+        positions:
+          - [2.5, 0, 1.0, 0]    # 前视摄像头
+          - [0.0, -0.3, 1.8, -90] # 左侧摄像头
+      lidar:
+        visualize: false
+    localization: &base_localize
+      gnss:
+        heading_direction_stddev: 0.05
+        speed_stddev: 0.05
+  behavior: &base_behavior
+    max_speed: 60
+    tailgate_speed: 70
+    overtake_allowed: false
+    collision_time_ahead: 1.5
+
+platoon_base:
+  max_capacity: 2
+  inter_gap: 0.8
+  open_gap: 1.5
+  warm_up_speed: 30
+
+carla_traffic_manager:
+  global_distance: 1.2  # 切入时缩小跟车距离
+  global_speed_perc: -15  # 基准速度+15%
+  ignore_lights_percentage: 100  # 忽略交通灯
+  vehicle_list:
+    - name: vt_cutter
+      spawn_position: [80.0, 143.51, 0.3, 0, 0, 0]  # 左侧车道
+      waypoints:
+        - [180.0, 143.51, 0.3]  # 保持左侧车道
+        - [200.0, 142.51, 0.3]  # 开始切入
+        - [205.0, 140.51, 0.3]  # 完全插入位置
+        - [300.0, 139.51, 0.3]  # 保持同车道
+      vehicle_speed_perc: -18  # 约62km/h（比编队快2km/h）
+      behavior:
+        collision_avoidance: false  # 禁用避让
+        lane_change: "aggressive"  # 激进变道模式
+        min_distance_to_leader: 8.0  # 插入后与前车距离
+
+scenario:
+  name: hard_cut_in_test
+  platoon_list:
+    - name: victim_platoon
+      inter_gap: 0.8
+      open_gap: 1.5
+      warm_up_speed: 30
+      platoon_max_speed: 16.67  # 60km/h
+      destination: [500, 139.51, 0.3]
+      members:
+        - name: lv_leader
+          spawn_position: [100.0, 139.51, 0.3, 0, 0, 0]
+          behavior:
+            speed_profile:
+              - {position: 150.0, speed: 60}  # 稳定在60km/h
+        - name: fv_follower
+          spawn_position: [85.0, 139.51, 0.3, 0, 0, 0]
+
+  evaluation_points:
+    - position: 210.0  # 切入完成检查点
+      checks:
+        - name: cutter_position
+          type: position
+          expected: [205.0, 140.51, 0.3]
+          tolerance: 1.0  # 位置误差<1m
+        - name: platoon_integrity
+          type: bool
+          expected: false  # 编队应被破坏
+        - name: follower_reaction
+          type: float
+          max: 2.0  # 跟随车应在2秒内响应
+
+    - position: 250.0  # 稳定状态检查
+      checks:
+        - name: new_gap_distance
+          type: float
+          range: [7.0, 9.0]  # 插入后车距应在7-9米
+        - name: speed_recovery
+          type: bool
+          expected: true  # 编队应恢复稳定

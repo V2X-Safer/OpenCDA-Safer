@@ -10,15 +10,15 @@ world:
   fixed_delta_seconds: 0.05
   seed: 11 # seed for numpy and random
   weather:
-    sun_altitude_angle: 85 # 90 is the midday and -90 is the midnight
-    cloudiness: 90 # 0 is the clean sky and 100 is the thickest cloud
-    precipitation: 100 # rain, 100 is the heaviest rain
-    precipitation_deposits: 100 # Determines the creation of puddles. Values range from 0 to 100, being 0 none at all and 100 a road completely capped with water.
-    wind_intensity: 50 # it will influence the rain
-    fog_density: 50 # fog thickness, 100 is the largest
-    fog_distance: 50  # Fog start distance. Values range from 0 to infinite.
-    fog_falloff: 50 # Density of the fog (as in specific mass) from 0 to infinity. The bigger the value, the more dense and heavy it will be, and the fog will reach smaller heights
-    wetness: 50
+    sun_altitude_angle: 0 # 90 is the midday and -90 is the midnight
+    cloudiness: 0 # 0 is the clean sky and 100 is the thickest cloud
+    precipitation: 0 # rain, 100 is the heaviest rain
+    precipitation_deposits: 0 # Determines the creation of puddles. Values range from 0 to 100, being 0 none at all and 100 a road completely capped with water.
+    wind_intensity: 0 # it will influence the rain
+    fog_density: 0 # fog thickness, 100 is the largest
+    fog_distance: 0  # Fog start distance. Values range from 0 to infinite.
+    fog_falloff: 0 # Density of the fog (as in specific mass) from 0 to infinity. The bigger the value, the more dense and heavy it will be, and the fog will reach smaller heights
+    wetness: 0
 
 # First define the basic parameters of the vehicles
 vehicle_base:
@@ -49,11 +49,17 @@ vehicle_base:
 carla_traffic_manager:
   random: true # whether to random select vehicles' color and model
   ignore_lights_percentage: 50 # whether set the traffic ignore traffic lights
-  vehicle_list: ~  # a number or a list
-  # Used only when vehicle_list is a number.
-  # x_min, x_max, y_min, y_max, x_step, y_step
-  range:
-    - [ 50, 250, 135, 145, 50, 4, 30]
+  vehicle_list:
+    - spawn_position: [101.7194, 136.51, 0.3, 0, 0, 0]
+      vehicle_speed_perc: 50
+    - spawn_position: [57.7194, 143.51, 0.3, 0, 0, 0]
+      vehicle_speed_perc: 50
+    - spawn_position: [75.7194, 139.51, 0.3, 0, 0, 0]
+      vehicle_speed_perc: 50
+    - spawn_position: [45.7194, 139.51, 0.3, 0, 0, 0]
+      vehicle_speed_perc: 500
+    - spawn_position: [150.7194, 139.51, 0.3, 0, 0, 0]
+      vehicle_speed_perc: 100
 
 # define scenario. In this scenario, only a single CAV will be spawned
 scenario:
@@ -68,8 +74,8 @@ scenario:
           debug_trajectory: false
           debug: false
     - name: cav2
-      spawn_position: [-5.51, 110.24, 0.3, 0, 90, 0]
-      destination: [360, 263, 0.3]
+      spawn_position: [88.51, 143.24, 0.3, 0, 0, 0]
+      destination: [660, 143.1, 0.3]
       v2x:
         communication_range: 45
       behavior:

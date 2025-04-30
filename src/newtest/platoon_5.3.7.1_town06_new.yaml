@@ -1,0 +1,81 @@
+description: |-
+  相邻车道车辆并行测试 - 符合T/CMAX 21005-2023标准5.3.7.1要求
+  测试编队与相邻车道车辆并行行驶的能力（目标车辆通过交通管理器实现）
+
+world:
+  sync_mode: true
+  client_port: 2000
+  fixed_delta_seconds: 0.05
+  seed: 24
+  weather:
+    sun_altitude_angle: 45
+    cloudiness: 30
+    precipitation: 0
+
+vehicle_base:
+  sensing:
+    perception:
+      camera:
+        visualize: 1
+        num: 1
+        positions:
+          - [2.5, 0, 1.0, 0]
+      lidar:
+        visualize: false
+    localization: &base_localize
+      gnss:
+        heading_direction_stddev: 0.1
+        speed_stddev: 0.1
+  behavior: &base_behavior
+    max_speed: 60
+    tailgate_speed: 70
+    overtake_allowed: false
+
+platoon_base:
+  max_capacity: 2
+  inter_gap: 0.6
+  open_gap: 1.2
+  warm_up_speed: 30
+
+# 通过交通管理器配置目标车辆
+carla_traffic_manager:
+  global_distance: 3.0
+  global_speed_perc: -10
+  ignore_lights_percentage: 0
+  vehicle_list:
+    - name: vt_parallel  # 目标车辆ID
+      spawn_position: [90.0, 143.51, 0.3, 0, 0, 0]  # 相邻车道位置
+      destination: [500, 143.51, 0.3]
+      vehicle_speed_perc: -15  # 约60km/h
+      behavior:
+        lane_change: false  # 禁止变道
+        collision_avoidance: true
+
+scenario:
+  name: parallel_driving_test_tm
+  platoon_list:
+    - name: parallel_platoon
+      inter_gap: 0.6
+      open_gap: 1.2
+      warm_up_speed: 30
+      platoon_max_speed: 16.67
+      destination: [500, 139.51, 0.3]
+      members:
+        - name: lv_parallel
+          spawn_position: [100.0, 139.51, 0.3, 0, 0, 0]
+        - name: fv_parallel
+          spawn_position: [85.0, 139.51, 0.3, 0, 0, 0]
+
+  evaluation_points:
+    - position: 300.0
+      checks:
+        - name: lane_keeping
+          type: bool
+          expected: true
+        - name: speed_stability
+          type: float
+          expected: 60.0
+          tolerance: 2.0
+        - name: no_collision
+          type: bool
+          expected: true

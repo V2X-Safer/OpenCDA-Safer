@@ -1,0 +1,75 @@
+description: |-
+  Copyright 2023 <Generated Configuration>
+  Content: Constant speed test scenario on Town06 map with straight road section
+
+# Global simulation settings 
+world:
+  sync_mode: true
+  client_port: 2000
+  fixed_delta_seconds: 0.05
+  seed: 12345
+  weather: 
+    sun_altitude_angle: 45.0
+    cloudiness: 30.0
+    precipitation: 0.0
+    precipitation_deposits: 0.0
+    wind_intensity: 0.0
+    fog_density: 0.0
+    wetness: 0.0
+
+# Vehicle base configuration 
+vehicle_base:
+  sensing:
+    perception:
+      camera:
+        visualize: 0
+        num: 0
+        positions: []
+      lidar:
+        visualize: false
+    localization:
+      gnss:
+        heading_direction_stddev: 0.1
+        speed_stddev: 0.2
+      debug_helper:
+        show_animation: false
+        x_scale: 10.0
+        y_scale: 10.0
+  map_manager:
+    visualize: false
+    activate: false
+  behavior:
+    max_speed: 70
+    tailgate_speed: 80
+    overtake_allowed: false
+    collision_time_ahead: 1.1
+
+# Platoon configuration
+platoon_base:
+  max_capacity: 3
+  inter_gap: 1.5
+  open_gap: 2.0
+  warm_up_speed: 30.0
+  change_leader_speed: false
+  leader_speeds_profile: [30.0]
+  stage_duration: 5.0
+
+# Scenario definition 
+scenario:
+  single_cav_list: []
+  platoon_list:
+    - name: test_platoon
+      destination: [500.0, -17.2, 0.3]  # 500m straight road
+      members:
+        - name: leader
+          spawn_position: [0.0, -17.2, 0.3, 0, 0, 0]  # x,y,z,roll,yaw,pitch
+          behavior:
+            local_planner:
+              debug_trajectory: false
+              debug: false
+        - name: follower1
+          spawn_position: [-10.0, -17.2, 0.3, 0, 0, 0]
+        - name: follower2
+          spawn_position: [-20.0, -17.2, 0.3, 0, 0, 0]
+      v2x:
+        enabled: true
