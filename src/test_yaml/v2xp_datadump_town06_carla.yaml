@@ -67,7 +67,7 @@ carla_traffic_manager:
   # Used only when vehicle_list is a number.
   #  x_min, x_max, y_min, y_max, x_step, y_step, vehicle_num
   range:
-    - [-11, 12, 100, 200, 3.5, 15, 25]
+    - [0, 12, -200, 200, 3.5, 15, 500]
 
 # define scenario. In this scenario, a 4-vehicle platoon already exists.
 scenario:
@@ -79,7 +79,7 @@ scenario:
   single_cav_list:
     - name: cav1
       spawn_position: [12.00, 192.31, 0.3, 0, -90, 0]
-      destination: [67.12, 150.2, 1.0]
+      destination: [12.00, -150.2, 1.0]
       v2x:
         communication_range: 45
       behavior:
@@ -87,8 +87,8 @@ scenario:
           debug_trajectory: false
           debug: false
     - name: cav2
-      spawn_position: [-5.51, 110.24, 0.3, 0, 90, 0]
-      destination: [-2.43, 263, 0.3]
+      spawn_position: [12.51, 180.24, 0.3, 0, -90, 0]
+      destination: [12.00, -150.2, 1.0]
       v2x:
         communication_range: 45
       behavior:

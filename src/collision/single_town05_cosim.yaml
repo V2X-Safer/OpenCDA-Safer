@@ -42,11 +42,12 @@ sumo:
 
 carla_traffic_manager:
   random: true # whether to random select vehicles' color and model
-  vehicle_list: ~  # a number or a list
-  # Used only when vehicle_list is a number.
-  # x_min, x_max, y_min, y_max, x_step, y_step, veh_num
-  range:
-    - [ -62, 0, -30, 50, 3.5, 25, 30]
+  vehicle_list:
+    - spawn_position: [-52.7194, -25.51, 0.6, 0, 90, 0]
+      vehicle_speed_perc: -20
+    - spawn_position: [-43.7194, 40.51, 0.6, 0, -90, 0]
+      vehicle_speed_perc: -20
+
 # define scenario. In this scenario, only a single CAV will be spawned
 scenario:
   single_cav_list: # this is for merging vehicle or single cav without v2x
@@ -64,24 +65,10 @@ scenario:
         local_planner:
           debug_trajectory: true
           debug: false
-    - name: cav2
-      spawn_position: [-43, 35, 0.60, 0, -90, 0] #right:90 left:-90  up:0  down:180     
-      #left_down[-55,-20,0.6,0,90,0]   right_up[-43,15,0.6,0,-90,0]
-      #right_dowm[-65,7,0.6,0,0,0]     left_up[-37,-5,0.6,180,0]  
-      # this parameter will overwrite the spawn position, when it is set, the vehicle is spawn
-      # at the merging lane. 0.5 means it is spawn at the middle of the whole merging lange.
-      # spawn_special: [0.34]
-      destination: [-43,-30, 0.6]
-      v2x:
-        communication_range: 45
-      behavior:
-        local_planner:
-          debug_trajectory: true
-          debug: false
           
 
     - name: cav3
-      spawn_position: [-65,7,0.6,0,0,0]  #right:90 left:-90  up:0  down:180     
+      spawn_position: [-75,7,0.6,0,0,0]  #right:90 left:-90  up:0  down:180     
       #left_down[-55,-20,0.6,0,90,0]   right_up[-43,15,0.6,0,-90,0]
       #right_dowm[-65,7,0.6,0,0,0]     left_up[-37,-5,0.6,180,0]  
       # this parameter will overwrite the spawn position, when it is set, the vehicle is spawn
@@ -95,3 +82,17 @@ scenario:
           debug_trajectory: true
           debug: false
 
+    - name: cav4
+      spawn_position: [-75,3,0.6,0,0,0]  #right:90 left:-90  up:0  down:180     
+      #left_down[-55,-20,0.6,0,90,0]   right_up[-43,15,0.6,0,-90,0]
+      #right_dowm[-65,7,0.6,0,0,0]     left_up[-37,-5,0.6,180,0]  
+      # this parameter will overwrite the spawn position, when it is set, the vehicle is spawn
+      # at the merging lane. 0.5 means it is spawn at the middle of the whole merging lange.
+      # spawn_special: [0.34]
+      destination: [5,50,0.6] 
+      v2x:
+        communication_range: 45
+      behavior:
+        local_planner:
+          debug_trajectory: true
+          debug: false

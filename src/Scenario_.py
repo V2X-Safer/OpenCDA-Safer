@@ -560,7 +560,7 @@ def process_run(scenario_params):
 # for test
 if __name__ == '__main__':
     utils_.restart_carla()
-    file = '/home/test/V2X/OpenCDA/OpenCDA/src/test_yaml/platoon_joining_town06_carla.yaml'
+    file = '/home/test/V2X/OpenCDA/OpenCDA/src/test_yaml/demo.yaml'
     # file = '/home/test/V2X/OpenCDA/OpenCDA/src/collision/platoon_around.yaml'
     param = utils_.get_param(file)
     param['map'] = utils_.get_map_name(file)
@@ -571,3 +571,4 @@ if __name__ == '__main__':
     
     # score, is_success, params = make_and_run(param)
     # print(score, is_success, params)
+ 

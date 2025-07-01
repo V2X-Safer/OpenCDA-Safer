@@ -1,4 +1,4 @@
-name: v2xfuzz
+name: v2xfuzz_opencda
 channels:
   - defaults
   - conda-forge

@@ -570,16 +570,17 @@ class ScenarioManager:
                         ego_vehicle_bp.get_attribute(
                             'color').recommended_values)
                     ego_vehicle_bp.set_attribute('color', color)
+            try:
+                vehicle = self.world.spawn_actor(ego_vehicle_bp, spawn_transform)
+                vehicle.set_autopilot(True, 8000)
+                if 'vehicle_speed_perc' in vehicle_config:
+                    tm.vehicle_percentage_speed_difference(
+                        vehicle, vehicle_config['vehicle_speed_perc'])
+                tm.auto_lane_change(vehicle, traffic_config['auto_lane_change'])
+                bg_list.append(vehicle)
 
-            vehicle = self.world.spawn_actor(ego_vehicle_bp, spawn_transform)
-            vehicle.set_autopilot(True, 8000)
-
-            if 'vehicle_speed_perc' in vehicle_config:
-                tm.vehicle_percentage_speed_difference(
-                    vehicle, vehicle_config['vehicle_speed_perc'])
-            tm.auto_lane_change(vehicle, traffic_config['auto_lane_change'])
-
-            bg_list.append(vehicle)
+            except:
+                pass
 
         return bg_list
 
